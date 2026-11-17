@@ -299,46 +299,59 @@ const FIREBASE_CONFIG = { // Firebase console → Project settings → Your apps
   messagingSenderId: "1027949677057",
   appId: "1:1027949677057:web:662c331af14ee8bf4ece00"
 };
-const LS_KEY = "tarqovu-checks";
-let remote = null;        // {save(k, v|null)} when the shared DB is connected
-let inflight = 0;
-function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {} }
-function loadLocal() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch (e) { return {}; } }
-function stamp(t) { $("saveInfo").textContent = t + " · " + new Date().toLocaleTimeString("az", {hour: "2-digit", minute: "2-digit"}); }
-function persistKey(k) {
-  saveLocal();
-  if (!remote) { stamp("Bu telefonda saxlanıldı"); return; }
-  inflight++; $("saveInfo").textContent = "Saxlanır…";
-  remote.save(k, state[k] || null)
-    .then(() => { inflight--; if (!inflight) stamp("Ortaq bazada saxlanıldı"); })
-    .catch(() => { inflight--; $("saveInfo").textContent = "İnternet yoxdur: qoşulanda göndəriləcək"; });
-}
+const LS_KEY = "tarqovu-checks", LS_UNSENT = "tarqovu-unsent";
+let remote = null;        // {save(k, v|null)} once the shared DB module is loaded
+let unsent = new Set();   // keys changed on this phone that the server has not confirmed yet
+let serverPending = false;
+function saveLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); localStorage.setItem(LS_UNSENT, JSON.stringify([...unsent])); } catch (e) {} }
+function loadLocal() { try { unsent = new Set(JSON.parse(localStorage.getItem(LS_UNSENT) || "[]")); return JSON.parse(localStorage.getItem(LS_KEY) || "{}") || {}; } catch (e) { return {}; } }
+function hhmm() { return new Date().toLocaleTimeString("az", {hour: "2-digit", minute: "2-digit"}); }
 function showNote(msg) { const n = $("storeNote"); n.textContent = msg; n.hidden = !msg; }
+function updateStatus() {
+  const off = !navigator.onLine, n = unsent.size;
+  let t;
+  if (!FIREBASE_CONFIG) t = "Bu telefonda saxlanır";
+  else if (off) t = n ? "İnternet yoxdur · " + n + " qeyd telefonda gözləyir" : "İnternet yoxdur · qeydlər telefonda saxlanır";
+  else if (!remote) t = "Ortaq bazaya qoşulur…";
+  else if (n || serverPending) t = "Göndərilir…";
+  else t = "Ortaq bazada saxlanıldı · " + hhmm();
+  $("saveInfo").textContent = t;
+  showNote(FIREBASE_CONFIG && off ? "İnternet yoxdur. İşləməyə davam edin: qeydlər bu telefonda saxlanır və internet gələndə avtomatik göndəriləcək. Səhifəni bağlamaq olar." : "");
+}
+function send(k) {
+  if (!remote) return;
+  const v = state[k] || null;
+  remote.save(k, v).then(() => { if (JSON.stringify(state[k] || null) === JSON.stringify(v)) { unsent.delete(k); saveLocal(); } updateStatus(); })
+    .catch(() => updateStatus());
+}
+function persistKey(k) { if (FIREBASE_CONFIG) unsent.add(k); saveLocal(); send(k); updateStatus(); }
+addEventListener("online", () => { [...unsent].forEach(send); updateStatus(); });
+addEventListener("offline", updateStatus);
 
 async function boot() {
-  state = loadLocal(); renderAll();
-  if (!FIREBASE_CONFIG) { $("saveInfo").textContent = "Bu telefonda saxlanır"; showNote("Qeydlər yalnız bu telefonun brauzerində saxlanır. Nəticəni Excel-ə yükləyib göndərin."); return; }
-  $("saveInfo").textContent = "Ortaq bazaya qoşulur…";
+  state = loadLocal(); renderAll(); updateStatus();
+  if (!FIREBASE_CONFIG) { showNote("Qeydlər yalnız bu telefonun brauzerində saxlanır. Nəticəni Excel-ə yükləyib göndərin."); return; }
   try {
     const V = "10.14.1";
     const app = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
     const fs = await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
-    const db = fs.initializeFirestore(app.initializeApp(FIREBASE_CONFIG), {localCache: fs.persistentLocalCache()});
+    let db;
+    try { db = fs.initializeFirestore(app.initializeApp(FIREBASE_CONFIG), {localCache: fs.persistentLocalCache()}); }
+    catch (e) { db = fs.getFirestore(); }
     const ref = fs.doc(db, "yoxlama", "tarqovu");
     remote = { save: (k, v) => fs.setDoc(ref, {items: {[k]: v === null ? fs.deleteField() : v}, updatedAt: fs.serverTimestamp()}, {merge: true}) };
-    let first = true;
-    fs.onSnapshot(ref, {includeMetadataChanges: false}, snap => {
-      const d = snap.exists() ? (snap.data().items || {}) : {};
-      if (first && !snap.exists() && Object.keys(state).length) { // first ever connection: upload what this phone already has
-        for (const k of Object.keys(state)) remote.save(k, state[k]);
-      } else if (JSON.stringify(d) !== JSON.stringify(state)) {
-        state = JSON.parse(JSON.stringify(d)); saveLocal(); renderAll();
-      }
-      if (first) { stamp(snap.metadata.fromCache ? "Oflayn, son yaddaş" : "Ortaq baza qoşuldu"); showNote(""); }
-      first = false;
-    }, err => { remote = null; $("saveInfo").textContent = "Ortaq baza əlçatan deyil"; showNote("Ortaq bazaya qoşulmaq olmadı: qeydlər hələlik bu telefonda saxlanır."); });
-  } catch (e) { remote = null; $("saveInfo").textContent = "Bu telefonda saxlanır"; showNote("Ortaq bazaya qoşulmaq olmadı (internet?): qeydlər hələlik bu telefonda saxlanır."); }
+    [...unsent].forEach(send);   // anything marked while the DB was unreachable
+    fs.onSnapshot(ref, {includeMetadataChanges: true}, snap => {
+      serverPending = snap.metadata.hasPendingWrites;
+      const d = snap.exists() ? JSON.parse(JSON.stringify(snap.data().items || {})) : {};
+      for (const k of unsent) { if (state[k]) d[k] = state[k]; else delete d[k]; }   // this phone's unconfirmed edits win locally
+      if (JSON.stringify(d) !== JSON.stringify(state)) { state = d; saveLocal(); renderAll(); }
+      updateStatus();
+    }, err => { remote = null; updateStatus(); showNote("Ortaq bazaya qoşulmaq olmadı: qeydlər bu telefonda saxlanır və sonra göndəriləcək. Səhifəni internetlə yeniləyin."); });
+  } catch (e) { remote = null; updateStatus(); }
 }
+
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
 
 // ---- controls
 $("srcSeg").onclick = e => { const b = e.target.closest("button"); if (!b) return; view.src = b.dataset.v; [...$("srcSeg").children].forEach(x => x.setAttribute("aria-pressed", x === b)); fillSec(); renderAll(); };
@@ -360,8 +373,8 @@ $("copyBtn").onclick = async () => {
 };
 // ---- save now / resume / export
 $("saveBtn").onclick = () => {
-  saveLocal();
-  toast(remote ? (inflight ? "Saxlanır…" : "Hamısı ortaq bazada saxlanılıb") : "Bu telefonda saxlanıldı. Qayıdanda qaldığınız yerdən davam edə bilərsiniz.");
+  saveLocal(); [...unsent].forEach(send);
+  toast(!navigator.onLine ? "Telefonda saxlanıldı. İnternet gələndə göndəriləcək." : unsent.size ? "Göndərilir…" : remote ? "Hamısı ortaq bazada saxlanılıb" : "Bu telefonda saxlanıldı.");
 };
 $("resumeBtn").onclick = () => {
   const next = DATA.find(it => !isFee(it) && status(it.k) === "none");
