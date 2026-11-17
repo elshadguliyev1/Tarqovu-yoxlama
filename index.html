@@ -291,7 +291,14 @@ function setStatus(it, s) {
 
 // ---- persistence: shared Firestore doc when FIREBASE_CONFIG is set, otherwise this browser only.
 // Each change writes just its own item (merge), so two people marking different rows never overwrite each other.
-const FIREBASE_CONFIG = null; // set to the object from Firebase console → Project settings → Your apps
+const FIREBASE_CONFIG = { // Firebase console → Project settings → Your apps (public by design; access is limited by Firestore rules)
+  apiKey: "AIzaSyCyzeQciuKjQMuRKHUj7LiDf3OqI-KFP5o",
+  authDomain: "tarqovu-70b0d.firebaseapp.com",
+  projectId: "tarqovu-70b0d",
+  storageBucket: "tarqovu-70b0d.firebasestorage.app",
+  messagingSenderId: "1027949677057",
+  appId: "1:1027949677057:web:662c331af14ee8bf4ece00"
+};
 const LS_KEY = "tarqovu-checks";
 let remote = null;        // {save(k, v|null)} when the shared DB is connected
 let inflight = 0;
