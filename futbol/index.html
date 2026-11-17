@@ -173,6 +173,9 @@ function bakuDate(offsetDays = 0) {
   const d = new Date(Date.now() + offsetDays * 864e5);
   return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
+// The free plan accepts dates from yesterday to tomorrow in UTC, so between 00:00 and 04:00 in Baku "tomorrow" is not yet available.
+const utcDate = off => new Date(Date.now() + off * 864e5).toISOString().slice(0, 10);
+const dateAllowed = d => d >= utcDate(-1) && d <= utcDate(1);
 const hm = ts => new Intl.DateTimeFormat("az", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(new Date(ts * 1000));
 const AY = ["yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avq", "sen", "okt", "noy", "dek"];
 const dm = ts => { const [y, mo, d] = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ts * 1000)).split("-"); return +d + " " + AY[+mo - 1]; };
@@ -203,6 +206,7 @@ async function api(path, onWait) {
     const e = d.errors && !Array.isArray(d.errors) ? d.errors : {};
     if (e.rateLimit) { onWait && onWait(8000); await sleep(8000); continue; }
     if (e.token) throw new ApiError("badkey");
+    if (e.access) throw new ApiError("suspended");
     if (e.requests) throw new ApiError("quota");
     if (e.plan) throw new ApiError("plan", e.plan);
     if (Object.keys(e).length) throw new ApiError("api", Object.values(e).join("; "));
@@ -215,6 +219,7 @@ function errText(e) {
             badkey: "API açarı səhvdir. «Açar» düyməsindən yenidən yazın.",
             quota: "Bu günün 100 sorğusu bitib. Limit hər gün saat 04:00-da (Bakı) yenilənir.",
             offline: "İnternet yoxdur.",
+            suspended: "API-Football hesabınız dayandırılıb. dashboard.api-football.com-a baxın və ya support@api-football.com-a yazın.",
             busy: "Server məşğuldur, bir dəqiqə sonra yenidən yoxlayın.",
             plan: "Pulsuz plan bu tarixə icazə vermir (yalnız dünən, bu gün, sabah)." }[e.code]) || ("Xəta: " + (e.message || e));
 }
@@ -402,7 +407,9 @@ async function renderMatch() {
     box.querySelectorAll(".fx").forEach(b => b.onclick = () => { matchView.fid = +b.dataset.id; renderMatch(); window.scrollTo(0, 0); });
   };
   let qt; q.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { matchView.q = q.value; list && draw(); }, 150); };
-  const load = async force => { try { list = await fixtures(bakuDate(matchView.day), force); draw(); } catch (e) { $("#fxBox").innerHTML = `<div class="err">${esc(errText(e))}</div>`; } };
+  const load = async force => {
+    if (!dateAllowed(bakuDate(matchView.day))) { $("#fxBox").innerHTML = `<div class="note">Sabahın oyunları pulsuz planda Bakı vaxtı ilə saat 04:00-dan sonra açılır. Hələlik «Bu gün» bölməsinə baxın.</div>`; return; }
+    try { list = await fixtures(bakuDate(matchView.day), force); draw(); } catch (e) { $("#fxBox").innerHTML = `<div class="err">${esc(errText(e))}</div>`; } };
   $("#reload").onclick = () => load(true);
   load(false);
 }
@@ -480,7 +487,9 @@ async function renderCoupon() {
   $("#mk").querySelectorAll("button").forEach(b => b.onclick = () => { const k = b.dataset.k; prefs.mk = prefs.mk.includes(k) ? prefs.mk.filter(x => x !== k) : [...prefs.mk, k]; b.setAttribute("aria-pressed", prefs.mk.includes(k)); savePrefs(); build(); });
 
   let all = [];
-  try { for (const d of days()) all = all.concat(await fixtures(bakuDate(d))); }
+  const blocked = days().filter(d => !dateAllowed(bakuDate(d)));
+  if (blocked.length === days().length) { $("#lgBox").innerHTML = `<div class="note">Sabahın oyunları pulsuz planda Bakı vaxtı ilə saat 04:00-dan sonra açılır. «Bu gün» seçin.</div>`; return; }
+  try { for (const d of days()) if (dateAllowed(bakuDate(d))) all = all.concat(await fixtures(bakuDate(d))); }
   catch (e) { $("#lgBox").innerHTML = `<div class="err">${esc(errText(e))}</div>`; return; }
   const soon = Date.now() / 1000 + 10 * 60;
   const open = all.filter(f => (f.st === "NS" || f.st === "TBD") && f.ts > soon && !isYouthOrWomen(f));
@@ -554,9 +563,9 @@ function addHist(item) { const h = ls.get(LS.hist, []); h.unshift(Object.assign(
 async function checkResults(silent) {
   const h = ls.get(LS.hist, []); const now = Date.now() / 1000;
   const due = new Set(); for (const it of h) for (const l of it.legs) if (!l.res && l.ts + 2.2 * 3600 < now) due.add(l.date);
-  const allowed = new Set([bakuDate(-1), bakuDate(0)]); let changed = 0, skipped = 0;
+  let changed = 0, skipped = 0;
   for (const d of due) {
-    if (!allowed.has(d)) { skipped++; continue; }
+    if (!dateAllowed(d)) { skipped++; continue; }
     let list; try { list = await fixtures(d, true); } catch (e) { if (!silent) toast(errText(e), 4000); return; }
     const byId = new Map(list.map(f => [f.id, f]));
     for (const it of h) for (const l of it.legs) if (!l.res && l.date === d) {
