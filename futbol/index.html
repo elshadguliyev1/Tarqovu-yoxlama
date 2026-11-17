@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Futbol Ehtimalları</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #f4f5f1; --surface: #ffffff; --surface-2: #eceee8; --line: #dcdfd6;
+  --fg: #171a14; --muted: #646b5d; --accent: #1f7a3d; --accent-ink: #ffffff; --accent-soft: #dff0e3;
+  --gold: #a86f00; --gold-soft: #fbefd2; --bad: #c2362b; --bad-soft: #f9e0dd; --info: #2b5fb4;
+  --shadow: 0 1px 2px rgba(20,30,10,.06), 0 4px 14px rgba(20,30,10,.05);
+  --f-display: "Archivo", "Inter", system-ui, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111410; --surface: #1a1e18; --surface-2: #242a21; --line: #333a2f;
+  --fg: #eef1ea; --muted: #9ba493; --accent: #4cc472; --accent-ink: #0b1a0f; --accent-soft: #19301f;
+  --gold: #e9b44c; --gold-soft: #33290f; --bad: #ef7466; --bad-soft: #3d1f1b; --info: #7aa7f0;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111410; --surface: #1a1e18; --surface-2: #242a21; --line: #333a2f;
+  --fg: #eef1ea; --muted: #9ba493; --accent: #4cc472; --accent-ink: #0b1a0f; --accent-soft: #19301f;
+  --gold: #e9b44c; --gold-soft: #33290f; --bad: #ef7466; --bad-soft: #3d1f1b; --info: #7aa7f0;
+  --shadow: 0 1px 2px rgba(0,0,0,.4); color-scheme: dark }
+* { box-sizing: border-box }
+html { -webkit-text-size-adjust: 100% }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--f-body) }
+.wrap { max-width: 860px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)) }
+header { padding-top: calc(18px + env(safe-area-inset-top)); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 12px }
+h1 { font: 800 24px/1.1 var(--f-display); margin: 0; letter-spacing: -.01em }
+h1 small { display: block; font: 500 12px var(--f-body); color: var(--muted); margin-top: 4px; letter-spacing: 0 }
+h2 { font: 800 18px/1.25 var(--f-display); margin: 0 0 8px }
+h3 { font: 600 14px/1.3 var(--f-body); margin: 0 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-size: 11.5px }
+.icon-btn { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 8px 10px; font: 500 13px var(--f-body); cursor: pointer }
+nav.tabs { position: sticky; top: 0; z-index: 5; background: var(--bg); padding-top: env(safe-area-inset-top); border-bottom: 1px solid var(--line) }
+nav.tabs .wrap { display: flex; gap: 4px; padding-block: 8px }
+nav.tabs button { flex: 1; border: 0; background: transparent; color: var(--muted); font: 600 14px var(--f-body); padding: 9px 6px; border-radius: 10px; cursor: pointer }
+nav.tabs button[aria-selected="true"] { background: var(--fg); color: var(--bg) }
+main { padding-block: 14px 80px }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); margin-bottom: 12px }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface) }
+.seg button { border: 0; background: transparent; color: var(--fg); padding: 8px 12px; font: 500 13.5px var(--f-body); cursor: pointer }
+.seg button + button { border-left: 1px solid var(--line) }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink) }
+input[type=search], input[type=text], input[type=number], input[type=password] { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 10px 12px; font: 15px var(--f-body); min-width: 0; width: 100% }
+input[type=number] { font-family: var(--f-mono) }
+button.primary, a.primary { border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 10px; padding: 11px 16px; font: 600 14.5px var(--f-body); cursor: pointer; text-decoration: none; display: inline-block }
+button.ghost { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 9px 13px; font: 500 13.5px var(--f-body); cursor: pointer }
+button:disabled { opacity: .5; cursor: default }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.muted { color: var(--muted) }
+.small { font-size: 12.5px }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums }
+.note { background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 35%, var(--line)); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 12px }
+.err { background: var(--bad-soft); border: 1px solid color-mix(in srgb, var(--bad) 40%, var(--line)); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; margin-bottom: 12px }
+
+.fx-list { display: grid; gap: 6px }
+.fx { display: grid; grid-template-columns: 52px minmax(0,1fr) auto; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; text-align: left; color: var(--fg); font: inherit; width: 100% }
+.fx:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) }
+.fx .t { font: 600 13px var(--f-mono); color: var(--muted) }
+.fx .teams { font-weight: 600; overflow: hidden; text-overflow: ellipsis }
+.fx .lg { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.fx .tag { font: 500 11.5px var(--f-mono); color: var(--accent); white-space: nowrap }
+.lg-h { font: 600 12px var(--f-body); color: var(--muted); margin: 14px 2px 4px; display: flex; gap: 6px; align-items: center }
+.lg-h img { width: 16px; height: 16px; object-fit: contain }
+
+.match-h { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; text-align: center; margin: 4px 0 12px }
+.match-h .tm { font: 700 16px/1.25 var(--f-display) }
+.match-h img { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto 6px }
+.match-h .vs { font: 500 12px var(--f-mono); color: var(--muted) }
+.picks { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) }
+.pick { border-radius: 12px; padding: 12px; border: 1px solid var(--line); background: var(--surface-2) }
+.pick.main { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)) }
+.pick .lbl { font: 600 11.5px var(--f-body); text-transform: uppercase; letter-spacing: .05em; color: var(--muted) }
+.pick .sel { font: 700 17px/1.25 var(--f-display); margin: 4px 0 6px }
+.pick .nums { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 12.5px var(--f-mono); color: var(--muted) }
+.pick .nums b { color: var(--fg); font-weight: 500 }
+.pbar { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 8px }
+.pbar i { display: block; height: 100%; background: var(--accent) }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px }
+th { text-align: left; font: 600 11px var(--f-body); color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 6px 6px; border-bottom: 1px solid var(--line) }
+td { padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: middle }
+td.n, th.n { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-space: nowrap }
+tr.grp td { background: var(--surface-2); font: 600 12px var(--f-body); color: var(--muted); padding-block: 5px }
+.ev-pos { color: var(--accent); font-weight: 600 }
+.ev-neg { color: var(--muted) }
+.scores { display: flex; flex-wrap: wrap; gap: 6px }
+.scores span { border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px; font: 13px var(--f-mono) }
+.calc { display: grid; grid-template-columns: 1fr 110px; gap: 8px; align-items: center }
+select { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 10px; padding: 10px; font: 14px var(--f-body); min-width: 0; width: 100% }
+
+.legs { display: grid; gap: 6px }
+.leg { display: grid; grid-template-columns: 26px minmax(0,1fr) auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 12px; padding: 9px 11px; background: var(--surface) }
+.leg .i { font: 500 12px var(--f-mono); color: var(--muted); text-align: center }
+.leg .s { font-weight: 600 }
+.leg .m { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.leg .r { text-align: right; font: 12.5px var(--f-mono); white-space: nowrap }
+.leg .r b { font-size: 14px }
+.leg[data-res="won"] { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: var(--accent-soft) }
+.leg[data-res="lost"] { border-color: color-mix(in srgb, var(--bad) 55%, var(--line)); background: var(--bad-soft) }
+.leg[data-res="void"] { opacity: .6 }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px }
+.kpi .v { font: 700 22px/1.1 var(--f-mono); font-variant-numeric: tabular-nums }
+.kpi .k { font-size: 12px; color: var(--muted); margin-top: 3px }
+.params { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 10px 0 }
+.params label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted) }
+.chips { display: flex; flex-wrap: wrap; gap: 6px }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 99px; padding: 6px 11px; font: 500 12.5px var(--f-body); cursor: pointer }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.prog { height: 8px; border-radius: 99px; background: var(--surface-2); overflow: hidden; margin: 8px 0 }
+.prog i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .3s }
+.lg-pick { max-height: 280px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; padding: 4px 10px; background: var(--surface) }
+.lg-pick label { display: flex; gap: 8px; align-items: center; padding: 6px 0; font-size: 13.5px; border-bottom: 1px solid var(--line) }
+.lg-pick label:last-child { border-bottom: 0 }
+.lg-pick .c { margin-left: auto; color: var(--muted); font: 12px var(--f-mono) }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 10px; font-size: 13.5px; z-index: 20; max-width: calc(100% - 32px) }
+.hist-item { margin-bottom: 10px }
+.hist-item .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 8px }
+.res-btns { display: inline-flex; gap: 4px }
+.res-btns button { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 7px; padding: 3px 7px; font: 12px var(--f-body); cursor: pointer }
+.badge { font: 600 11.5px var(--f-body); border-radius: 99px; padding: 3px 9px; white-space: nowrap }
+.badge.won { background: var(--accent-soft); color: var(--accent) }
+.badge.lost { background: var(--bad-soft); color: var(--bad) }
+.badge.pending { background: var(--surface-2); color: var(--muted) }
+@media (max-width: 520px) {
+  .fx { grid-template-columns: 44px minmax(0,1fr) }
+  .fx .tag { grid-column: 2 }
+  td, th { padding-inline: 4px }
+  .hide-sm { display: none }
+}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <h1>Futbol ehtimalları<small id="quota">Bu gün: 0 / 100 sorğu</small></h1>
+  <button class="icon-btn" id="setBtn" type="button">Açar</button>
+</header>
+<nav class="tabs"><div class="wrap" role="tablist">
+  <button role="tab" data-tab="match" aria-selected="true">Oyun</button>
+  <button role="tab" data-tab="coupon" aria-selected="false">Kupon</button>
+  <button role="tab" data-tab="hist" aria-selected="false">Tarixçə</button>
+</div></nav>
+<main class="wrap" id="main"></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* Odds-based football probabilities (API-Football, free plan).
+   Probability = bookmaker odds with the margin removed: Pinnacle when it prices the market, otherwise the median of all books.
+   Free-plan limits handled here: only yesterday..tomorrow, 10 requests/min, 100/day, odds per fixture. */
+const API = "https://v3.football.api-sports.io";
+const TZ = "Asia/Baku";
+const LS = { key: "fe-key", hist: "fe-hist", quota: "fe-quota", cache: "fe-c:", prefs: "fe-prefs" };
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pct = p => (p * 100).toFixed(p >= 0.995 || p < 0.1 ? 1 : 0) + "%";
+const odd = o => o == null ? "–" : o.toFixed(2);
+const ls = { get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+             set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+             del(k) { try { localStorage.removeItem(k); } catch (e) {} } };
+function toast(t, ms = 2600) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, ms); }
+
+// ---------- dates (Baku) ----------
+function bakuDate(offsetDays = 0) {
+  const d = new Date(Date.now() + offsetDays * 864e5);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+}
+const hm = ts => new Intl.DateTimeFormat("az", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(new Date(ts * 1000));
+const AY = ["yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avq", "sen", "okt", "noy", "dek"];
+const dm = ts => { const [y, mo, d] = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ts * 1000)).split("-"); return +d + " " + AY[+mo - 1]; };
+
+// ---------- API with throttling + caching ----------
+const getKey = () => ls.get(LS.key, "");
+let calls = [];
+function quota() { const q = ls.get(LS.quota, {}); const day = new Date().toISOString().slice(0, 10); return q.day === day ? q : { day, n: 0 }; }
+function bumpQuota() { const q = quota(); q.n++; ls.set(LS.quota, q); showQuota(); }
+function showQuota() { const q = quota(); $("#quota").textContent = "Bu gün: " + q.n + " / 100 sorğu"; }
+class ApiError extends Error { constructor(code, msg) { super(msg || code); this.code = code; } }
+
+async function api(path, onWait) {
+  const key = getKey(); if (!key) throw new ApiError("nokey");
+  for (let attempt = 0; attempt < 4; attempt++) {
+    for (;;) { // stay under 10 requests per rolling minute
+      const now = Date.now(); calls = calls.filter(t => now - t < 61000);
+      if (calls.length < 9) break;
+      const wait = 61000 - (now - calls[0]) + 300; onWait && onWait(wait); await sleep(wait);
+    }
+    calls.push(Date.now()); bumpQuota();
+    let res;
+    try { res = await fetch(API + path, { headers: { "x-apisports-key": key } }); }
+    catch (e) { if (!navigator.onLine) throw new ApiError("offline"); onWait && onWait(8000); await sleep(8000); continue; } // a 429 arrives without CORS headers
+    if (res.status === 429) { onWait && onWait(8000); await sleep(8000); continue; }
+    if (!res.ok) throw new ApiError("http", "Server xətası " + res.status);
+    const d = await res.json();
+    const e = d.errors && !Array.isArray(d.errors) ? d.errors : {};
+    if (e.rateLimit) { onWait && onWait(8000); await sleep(8000); continue; }
+    if (e.token) throw new ApiError("badkey");
+    if (e.requests) throw new ApiError("quota");
+    if (e.plan) throw new ApiError("plan", e.plan);
+    if (Object.keys(e).length) throw new ApiError("api", Object.values(e).join("; "));
+    return d;
+  }
+  throw new ApiError("busy");
+}
+function errText(e) {
+  return ({ nokey: "API açarı yoxdur. Yuxarıda «Açar» düyməsini basın.",
+            badkey: "API açarı səhvdir. «Açar» düyməsindən yenidən yazın.",
+            quota: "Bu günün 100 sorğusu bitib. Limit hər gün saat 04:00-da (Bakı) yenilənir.",
+            offline: "İnternet yoxdur.",
+            busy: "Server məşğuldur, bir dəqiqə sonra yenidən yoxlayın.",
+            plan: "Pulsuz plan bu tarixə icazə vermir (yalnız dünən, bu gün, sabah)." }[e.code]) || ("Xəta: " + (e.message || e));
+}
+function cacheGet(k, ttlMin) { const c = ls.get(LS.cache + k); return c && Date.now() - c.t < ttlMin * 6e4 ? c.v : null; }
+function cacheSet(k, v) {
+  if (ls.set(LS.cache + k, { t: Date.now(), v })) return;
+  try { Object.keys(localStorage).filter(x => x.startsWith(LS.cache)).forEach(x => localStorage.removeItem(x)); } catch (e) {} // full: drop all cache
+  ls.set(LS.cache + k, { t: Date.now(), v });
+}
+function pruneCache() {
+  try { for (const k of Object.keys(localStorage)) if (k.startsWith(LS.cache)) { const c = ls.get(k); if (!c || Date.now() - c.t > 2 * 864e5) localStorage.removeItem(k); } } catch (e) {}
+}
+
+async function fixtures(date, force) {
+  const ck = "fx:" + date; const c = !force && cacheGet(ck, 20); if (c) return c;
+  const d = await api("/fixtures?date=" + date + "&timezone=" + TZ);
+  const v = d.response.map(r => ({ id: r.fixture.id, ts: r.fixture.timestamp, st: r.fixture.status.short,
+    lg: { id: r.league.id, n: r.league.name, c: r.league.country, logo: r.league.logo, r: r.league.round },
+    h: { id: r.teams.home.id, n: r.teams.home.name, logo: r.teams.home.logo }, a: { id: r.teams.away.id, n: r.teams.away.name, logo: r.teams.away.logo },
+    ft: r.score && r.score.fulltime ? [r.score.fulltime.home, r.score.fulltime.away] : null, g: [r.goals.home, r.goals.away] }));
+  cacheSet(ck, v); return v;
+}
+// compact odds: {bk: {name: {x:[h,d,a], dc:[1X,12,X2], ou:{"2.5":[o,u]}, bt:[yes,no]}}}
+function parseOdds(resp) {
+  const bk = {};
+  for (const b of (resp.bookmakers || [])) {
+    const o = {};
+    for (const bet of b.bets) {
+      const v = Object.fromEntries(bet.values.map(x => [String(x.value), parseFloat(x.odd)]));
+      if (bet.id === 1 && v.Home && v.Draw && v.Away) o.x = [v.Home, v.Draw, v.Away];
+      else if (bet.id === 12 && v["Home/Draw"] && v["Home/Away"] && v["Draw/Away"]) o.dc = [v["Home/Draw"], v["Home/Away"], v["Draw/Away"]];
+      else if (bet.id === 8 && v.Yes && v.No) o.bt = [v.Yes, v.No];
+      else if (bet.id === 5) { o.ou = {}; for (const L of ["0.5","1.5","2.5","3.5","4.5"]) if (v["Over " + L] && v["Under " + L]) o.ou[L] = [v["Over " + L], v["Under " + L]]; }
+    }
+    if (Object.keys(o).length) bk[b.name] = o;
+  }
+  return bk;
+}
+async function oddsFor(fid, onWait, force) {
+  const ck = "od:" + fid; const c = !force && cacheGet(ck, 90); if (c) return c;
+  const d = await api("/odds?fixture=" + fid, onWait);
+  const v = d.response.length ? parseOdds(d.response[0]) : {};
+  cacheSet(ck, v); return v;
+}
+
+// ---------- model ----------
+const median = a => { const s = [...a].sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+const devig = arr => { const inv = arr.map(o => 1 / o); const s = inv.reduce((a, b) => a + b, 0); return inv.map(x => x / s); };
+function fairFrom(books, get) { // -> {p:[..], src, n}
+  const pin = books.Pinnacle && get(books.Pinnacle);
+  const all = Object.values(books).map(get).filter(Boolean);
+  if (!all.length) return null;
+  if (pin) return { p: devig(pin), src: "Pinnacle", n: all.length };
+  const dv = all.map(devig); const p = dv[0].map((_, i) => median(dv.map(x => x[i]))); const s = p.reduce((a, b) => a + b, 0);
+  return { p: p.map(x => x / s), src: "median", n: all.length };
+}
+function bestOdds(books, get, i) { let best = null, bk = null; for (const [n, b] of Object.entries(books)) { const a = get(b); if (a && a[i] && (!best || a[i] > best)) { best = a[i]; bk = n; } } return { best, bk }; }
+const pois = (k, l) => { let p = Math.exp(-l); for (let i = 1; i <= k; i++) p *= l / i; return p; };
+function fitPoisson(p1, p2, pOver) { // find home/away expected goals that reproduce 1X2 (+ over 2.5)
+  let best = null;
+  for (let lh = 0.15; lh <= 4.01; lh += 0.05) for (let la = 0.15; la <= 4.01; la += 0.05) {
+    let h = 0, a = 0, over = 0;
+    const ph = [], pa = []; for (let i = 0; i <= 9; i++) { ph.push(pois(i, lh)); pa.push(pois(i, la)); }
+    for (let i = 0; i <= 9; i++) for (let j = 0; j <= 9; j++) { const p = ph[i] * pa[j]; if (i > j) h += p; else if (j > i) a += p; if (i + j > 2) over += p; }
+    const err = (h - p1) ** 2 + (a - p2) ** 2 + (pOver == null ? (lh + la - 2.6) ** 2 * 0.002 : (over - pOver) ** 2);
+    if (!best || err < best.err) best = { err, lh, la };
+  }
+  const sc = []; for (let i = 0; i <= 6; i++) for (let j = 0; j <= 6; j++) sc.push({ s: i + ":" + j, p: pois(i, best.lh) * pois(j, best.la) });
+  sc.sort((x, y) => y.p - x.p);
+  return { lh: best.lh, la: best.la, scores: sc.slice(0, 5) };
+}
+function analyze(fx, books, opt = {}) {
+  const sels = []; let srcs = new Set(), nBooks = Object.keys(books).length;
+  const add = (group, key, label, p, bo) => sels.push({ group, key, label, p, fair: 1 / p, best: bo.best, bk: bo.bk, ev: bo.best ? p * bo.best - 1 : null });
+  const x = fairFrom(books, b => b.x);
+  if (x) { srcs.add(x.src);
+    const [h, d, a] = x.p;
+    add("1X2", "1", fx.h.n + " qalib", h, bestOdds(books, b => b.x, 0));
+    add("1X2", "X", "Heç-heçə", d, bestOdds(books, b => b.x, 1));
+    add("1X2", "2", fx.a.n + " qalib", a, bestOdds(books, b => b.x, 2));
+    add("İkiqat şans", "1X", "1X · " + fx.h.n + " uduzmaz", h + d, bestOdds(books, b => b.dc, 0));
+    add("İkiqat şans", "12", "12 · heç-heçə olmaz", h + a, bestOdds(books, b => b.dc, 1));
+    add("İkiqat şans", "X2", "X2 · " + fx.a.n + " uduzmaz", d + a, bestOdds(books, b => b.dc, 2));
+  }
+  let pOver25 = null;
+  for (const L of ["0.5","1.5","2.5","3.5","4.5"]) {
+    const ou = fairFrom(books, b => b.ou && b.ou[L]); if (!ou) continue; srcs.add(ou.src);
+    if (L === "2.5") pOver25 = ou.p[0];
+    add("Qollar (alt/üst)", "O" + L, L + " üst", ou.p[0], bestOdds(books, b => b.ou && b.ou[L], 0));
+    add("Qollar (alt/üst)", "U" + L, L + " alt", ou.p[1], bestOdds(books, b => b.ou && b.ou[L], 1));
+  }
+  const bt = fairFrom(books, b => b.bt);
+  if (bt) { srcs.add(bt.src);
+    add("Hər iki komanda qol vurar", "BY", "Hər iki komanda qol vurar", bt.p[0], bestOdds(books, b => b.bt, 0));
+    add("Hər iki komanda qol vurar", "BN", "Ən azı biri qol vurmaz", bt.p[1], bestOdds(books, b => b.bt, 1));
+  }
+  const pois = x && !opt.fast ? fitPoisson(x.p[0], x.p[2], pOver25) : null;
+  const usable = sels.filter(s => s.fair >= 1.12);
+  const reliable = [...usable].sort((a, b) => b.p - a.p)[0];
+  const withEv = sels.filter(s => s.ev != null && s.p >= 0.35);
+  const value = [...withEv].filter(s => s.ev > 0.005 && s.fair >= 1.12).sort((a, b) => b.ev - a.ev)[0];
+  const mid = withEv.filter(s => s.p >= 0.55 && s.fair >= 1.2);
+  let rec = [...mid].sort((a, b) => b.ev - a.ev)[0];
+  if (!rec) rec = [...usable].filter(s => s.p >= 0.5).sort((a, b) => b.p * Math.log(b.fair) - a.p * Math.log(a.fair))[0];
+  return { sels, reliable, value, rec, pois, src: srcs.has("Pinnacle") ? "Pinnacle" : "median", nBooks };
+}
+// result of a selection given 90-minute score
+function settle(key, h, a) {
+  const t = h + a;
+  if (key === "1") return h > a; if (key === "X") return h === a; if (key === "2") return a > h;
+  if (key === "1X") return h >= a; if (key === "12") return h !== a; if (key === "X2") return a >= h;
+  if (key[0] === "O") return t > parseFloat(key.slice(1)); if (key[0] === "U") return t < parseFloat(key.slice(1));
+  if (key === "BY") return h > 0 && a > 0; if (key === "BN") return !(h > 0 && a > 0);
+  return null;
+}
+
+// ---------- league priority ----------
+const TOP = [2,3,848,39,140,135,78,61,203,419,94,88,144,179,40,235,218,207,197,1,4,5,9,10,32,34,29,30,31,33,6,7,17,22,143,45,81,137,66,96,141,79,136,62,119,103,113,106,345,283,210,333,71,128,253,262,307,98,292,188,169,13,11,15,16,41,42,120,204,244,172,271,286,318,332,373,383];
+const PRIORITY = new Map(TOP.map((id, i) => [id, i]));
+const lgRank = f => PRIORITY.has(f.lg.id) ? PRIORITY.get(f.lg.id) : 1000;
+const isYouthOrWomen = f => /U1\d|U2\d|Youth|Women|Reserve|Girls|Feminin|W\b|WSL|WE League|Frauen|Reina/i.test(f.lg.n);
+
+// ---------- state ----------
+const prefs = Object.assign({ legs: 25, minO: 1.15, maxO: 1.60, stake: 0.5, mk: ["1X2", "İkiqat şans", "Qollar (alt/üst)", "Hər iki komanda qol vurar"], day: 0 }, ls.get(LS.prefs, {}));
+const savePrefs = () => ls.set(LS.prefs, prefs);
+const RESERVE = 4; // keep a few daily requests for single-match lookups and result checks
+let tab = "match";
+let matchView = { day: 0, q: "", fid: null };
+let coupon = { day: prefs.day, leagues: null, loading: false, legs: null, info: "" };
+
+// ---------- tabs ----------
+document.querySelectorAll("nav.tabs button").forEach(b => b.onclick = () => { tab = b.dataset.tab; document.querySelectorAll("nav.tabs button").forEach(x => x.setAttribute("aria-selected", x === b)); render(); window.scrollTo(0, 0); });
+$("#setBtn").onclick = () => { tab = "key"; render(); };
+function render() { ({ match: renderMatch, coupon: renderCoupon, hist: renderHist, key: renderKey })[getKey() ? tab : "key"](); }
+
+// ---------- key screen ----------
+function renderKey() {
+  const m = $("#main");
+  m.innerHTML = `<div class="card"><h2>API-Football açarı</h2>
+    <p class="muted small">Açar yalnız bu telefonun brauzerində saxlanır, heç yerə göndərilmir (yalnız api-sports.io-ya sorğularda).</p>
+    <p class="small">Açarı tapmaq üçün <b>dashboard.api-football.com</b> səhifəsində <b>Account → My Access</b> bölməsinə baxın.</p>
+    <div class="row"><input type="password" id="keyIn" placeholder="32 simvollu açar" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="primary" id="keySave" type="button">Yadda saxla və yoxla</button></div>
+    <p id="keyMsg" class="small"></p>${getKey() ? '<button class="ghost" id="keyBack" type="button">Geri</button>' : ""}</div>
+    <div class="note"><b>Necə işləyir?</b> Ehtimallar bukmeker əmsallarından hesablanır: əsas mənbə dünyada ən dəqiq sayılan Pinnacle-dır, onun marjası çıxılır. Etopaz bu siyahıda olmadığı üçün hər seçimdə <b>«Etopaz-da minimum»</b> əmsal göstərilir: Etopaz bundan yüksək verirsə, mərc riyazi olaraq sərfəlidir.</div>`;
+  $("#keyIn").value = getKey();
+  $("#keySave").onclick = async () => {
+    const k = $("#keyIn").value.trim(); if (!/^[a-f0-9]{20,64}$/i.test(k)) { $("#keyMsg").textContent = "Açar düzgün formatda deyil."; return; }
+    ls.set(LS.key, k); $("#keyMsg").textContent = "Yoxlanılır…";
+    try { const d = await api("/status"); const r = d.response; $("#keyMsg").textContent = "✓ Açar işləyir · plan: " + r.subscription.plan + " · bu gün istifadə: " + r.requests.current + "/" + r.requests.limit_day;
+      const q = quota(); q.n = r.requests.current; ls.set(LS.quota, q); showQuota(); setTimeout(() => { tab = "match"; render(); }, 900); }
+    catch (e) { if (e.code === "badkey") ls.del(LS.key); $("#keyMsg").textContent = errText(e); }
+  };
+  const kb = $("#keyBack"); if (kb) kb.onclick = () => { tab = "match"; render(); };
+}
+
+// ---------- match tab ----------
+function dayLabel(off) { return off === 0 ? "Bu gün" : off === 1 ? "Sabah" : "Dünən"; }
+const norm = s => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ə/g, "a").replace(/ı/g, "i").replace(/[^a-z0-9 ]/g, " ");
+async function renderMatch() {
+  const m = $("#main");
+  if (matchView.fid) return renderAnalysis();
+  m.innerHTML = `<div class="row" style="margin-bottom:10px"><div class="seg" id="daySeg"><button data-d="0">Bu gün</button><button data-d="1">Sabah</button></div>
+    <button class="ghost" id="reload" type="button">Yenilə</button></div>
+    <input type="search" id="q" placeholder="Komanda adı: məs. Qarabag, Real Madrid…" autocomplete="off">
+    <p class="small muted" style="margin:6px 2px 0">İki komandanın adını yaza bilərsiniz. Adlar ingiliscədir (Qarabag, Neftchi, Galatasaray).</p>
+    <div id="fxBox" style="margin-top:10px"><p class="muted">Yüklənir…</p></div>`;
+  m.querySelectorAll("#daySeg button").forEach(b => { b.setAttribute("aria-pressed", +b.dataset.d === matchView.day); b.onclick = () => { matchView.day = +b.dataset.d; renderMatch(); }; });
+  const q = $("#q"); q.value = matchView.q;
+  let list;
+  const draw = () => {
+    const words = norm(matchView.q).split(/\s+/).filter(w => w.length > 1);
+    let rows = list.filter(f => f.st === "NS" || f.st === "TBD");
+    if (words.length) rows = rows.filter(f => { const h = norm(f.h.n + " " + f.a.n + " " + f.lg.n + " " + f.lg.c); return words.every(w => h.includes(w)) || (words.length >= 2 && words.some(w => norm(f.h.n).includes(w)) && words.some(w => norm(f.a.n).includes(w))); });
+    else rows = rows.filter(f => !isYouthOrWomen(f));
+    rows.sort((x, y) => lgRank(x) - lgRank(y) || x.lg.id - y.lg.id || x.ts - y.ts);
+    const box = $("#fxBox");
+    if (!rows.length) { box.innerHTML = `<p class="muted">Uyğun oyun tapılmadı${words.length ? ". Adı ingiliscə yazın və ya digər günə baxın." : "."}</p>`; return; }
+    let html = "", lastLg = null;
+    for (const f of rows.slice(0, 150)) {
+      if (f.lg.id !== lastLg) { html += `<div class="lg-h"><img src="${esc(f.lg.logo)}" alt="" loading="lazy">${esc(f.lg.c)} · ${esc(f.lg.n)}</div>`; lastLg = f.lg.id; }
+      const od = cacheGet("od:" + f.id, 90);
+      html += `<button class="fx" type="button" data-id="${f.id}"><span class="t">${hm(f.ts)}</span><span style="min-width:0"><div class="teams">${esc(f.h.n)} – ${esc(f.a.n)}</div></span><span class="tag">${od ? (Object.keys(od).length ? "əmsal ✓" : "əmsal yox") : ""}</span></button>`;
+    }
+    box.innerHTML = `<div class="fx-list">${html}</div>` + (rows.length > 150 ? `<p class="small muted">İlk 150 oyun göstərilir, axtarışla daraldın.</p>` : "");
+    box.querySelectorAll(".fx").forEach(b => b.onclick = () => { matchView.fid = +b.dataset.id; renderMatch(); window.scrollTo(0, 0); });
+  };
+  let qt; q.oninput = () => { clearTimeout(qt); qt = setTimeout(() => { matchView.q = q.value; list && draw(); }, 150); };
+  const load = async force => { try { list = await fixtures(bakuDate(matchView.day), force); draw(); } catch (e) { $("#fxBox").innerHTML = `<div class="err">${esc(errText(e))}</div>`; } };
+  $("#reload").onclick = () => load(true);
+  load(false);
+}
+function findFx(fid) { for (const d of [-1, 0, 1]) { const l = cacheGet("fx:" + bakuDate(d), 60 * 48); const f = l && l.find(x => x.id === fid); if (f) return f; } return null; }
+async function renderAnalysis(force) {
+  const m = $("#main"); const f = findFx(matchView.fid);
+  if (!f) { matchView.fid = null; return renderMatch(); }
+  m.innerHTML = `<button class="ghost" id="back" type="button">← Oyunlar</button>
+    <div class="card" style="margin-top:10px"><div class="small muted" style="text-align:center">${esc(f.lg.c)} · ${esc(f.lg.n)} · ${dm(f.ts)}, ${hm(f.ts)} (Bakı)</div>
+    <div class="match-h"><div><img src="${esc(f.h.logo)}" alt=""><div class="tm">${esc(f.h.n)}</div></div><div class="vs">vs</div><div><img src="${esc(f.a.logo)}" alt=""><div class="tm">${esc(f.a.n)}</div></div></div>
+    <div id="an"><p class="muted">Əmsallar yüklənir…</p></div></div>`;
+  $("#back").onclick = () => { matchView.fid = null; renderMatch(); };
+  let books;
+  try { books = await oddsFor(f.id, w => { const a = $("#an"); if (a) a.innerHTML = `<p class="muted">Limitə görə ${Math.ceil(w / 1000)} san. gözlənilir…</p>`; }, force); }
+  catch (e) { $("#an").innerHTML = `<div class="err">${esc(errText(e))}</div>`; return; }
+  if (!Object.keys(books).length) { $("#an").innerHTML = `<div class="note">Bu oyun üçün bukmeker əmsalı yoxdur, ona görə ehtimal hesablamaq olmur. Əmsallar adətən oyundan 1–2 gün əvvəl çıxır.</div><button class="ghost" id="rf" type="button">Yenidən yoxla</button>`; $("#rf").onclick = () => renderAnalysis(true); return; }
+  const A = analyze(f, books);
+  const card = (cls, lbl, s, why) => !s ? "" : `<div class="pick ${cls}"><div class="lbl">${lbl}</div><div class="sel">${esc(s.label)}</div>
+    <div class="nums"><span>ehtimal <b>${pct(s.p)}</b></span><span>ədalətli <b>${odd(s.fair)}</b></span>${s.best ? `<span>ən yaxşı <b>${odd(s.best)}</b></span>` : ""}</div>
+    <div class="nums" style="margin-top:4px"><span>Etopaz-da minimum <b>${odd(Math.ceil(s.fair * 100) / 100)}</b></span></div>
+    <div class="pbar"><i style="width:${(s.p * 100).toFixed(1)}%"></i></div>${why ? `<p class="small muted" style="margin:8px 0 0">${why}</p>` : ""}</div>`;
+  const recWhy = A.rec && A.rec.ev != null && A.rec.ev > 0.005
+    ? `Ehtimalı yüksəkdir və bazarda ədalətli qiymətdən yüksək əmsal var (${A.rec.bk}: ${odd(A.rec.best)}, +${(A.rec.ev * 100).toFixed(1)}%).`
+    : `Aydın riyazi üstünlük yoxdur; ehtimal ilə əmsalın ən balanslı nisbəti budur.`;
+  let groups = "", lastG = null;
+  for (const s of A.sels) {
+    if (s.group !== lastG) { groups += `<tr class="grp"><td colspan="5">${esc(s.group)}</td></tr>`; lastG = s.group; }
+    groups += `<tr><td>${esc(s.label)}</td><td class="n">${pct(s.p)}</td><td class="n">${odd(s.fair)}</td><td class="n hide-sm">${s.best ? odd(s.best) : "–"}</td><td class="n ${s.ev > 0.005 ? "ev-pos" : "ev-neg"}">${s.ev == null ? "–" : (s.ev > 0 ? "+" : "") + (s.ev * 100).toFixed(1) + "%"}</td></tr>`;
+  }
+  $("#an").innerHTML = `
+    <div class="picks">${card("main", "🎯 Tövsiyə", A.rec, recWhy)}${card("", "✅ Ən etibarlı", A.reliable, "Ən yüksək ehtimallı seçim (əmsal ≥ 1.12).")}${A.value && A.value !== A.rec ? card("", "💰 Ən çox dəyər", A.value, `Ədalətli qiymətdən ən çox yuxarı əmsal: ${esc(A.value.bk)}.`) : ""}</div>
+    ${A.pois ? `<h3 style="margin-top:16px">Ən ehtimallı hesablar</h3><div class="scores">${A.pois.scores.map(s => `<span>${s.s} · ${pct(s.p)}</span>`).join("")}</div>
+      <p class="small muted" style="margin:6px 0 0">Gözlənilən qollar: ${esc(f.h.n)} ${A.pois.lh.toFixed(2)} · ${esc(f.a.n)} ${A.pois.la.toFixed(2)}</p>` : ""}
+    <h3 style="margin-top:16px">Etopaz əmsalını yoxla</h3>
+    <div class="calc"><select id="cSel">${A.sels.map((s, i) => `<option value="${i}"${s === A.rec ? " selected" : ""}>${esc(s.label)} (${pct(s.p)})</option>`).join("")}</select><input type="number" id="cOdd" inputmode="decimal" step="0.01" min="1.01" placeholder="Etopaz"></div>
+    <p id="cRes" class="small" style="margin:8px 0 0"></p>
+    <div class="row" style="margin-top:10px"><button class="primary" id="saveRec" type="button">Seçimi tarixçəyə yaz</button><button class="ghost" id="rf" type="button">Əmsalları yenilə</button></div>
+    <h3 style="margin-top:18px">Bütün bazarlar</h3>
+    <table><thead><tr><th>Seçim</th><th class="n">Ehtimal</th><th class="n">Ədalətli</th><th class="n hide-sm">Ən yaxşı</th><th class="n">Dəyər</th></tr></thead><tbody>${groups}</tbody></table>
+    <p class="small muted" style="margin-top:10px">Mənbə: ${A.src === "Pinnacle" ? "Pinnacle (marja çıxılıb)" : "bukmekerlərin median ehtimalı (Pinnacle yoxdur)"} · ${A.nBooks} bukmeker. «Dəyər» = ehtimal × ən yaxşı əmsal − 1. Bu, zəmanət deyil: ehtimaldır.</p>`;
+  const calc = () => { const s = A.sels[+$("#cSel").value]; const o = parseFloat(String($("#cOdd").value).replace(",", ".")); const r = $("#cRes");
+    if (!o || o <= 1) { r.textContent = `Minimum sərfəli əmsal: ${odd(Math.ceil(s.fair * 100) / 100)}`; r.className = "small muted"; return; }
+    const ev = s.p * o - 1; r.className = "small " + (ev > 0 ? "ev-pos" : "ev-neg");
+    r.textContent = ev > 0 ? `✓ Sərfəlidir: hər 1 AZN üçün gözlənilən +${(ev * 100).toFixed(1)}%.` : `✗ Etopaz əmsalı ədalətli qiymətdən aşağıdır (${(ev * 100).toFixed(1)}%). Uzun müddətdə zərərdir.`; };
+  $("#cSel").onchange = calc; $("#cOdd").oninput = calc; calc();
+  $("#rf").onclick = () => renderAnalysis(true);
+  $("#saveRec").onclick = () => { const s = A.sels[+$("#cSel").value]; const o = parseFloat(String($("#cOdd").value).replace(",", "."));
+    addHist({ type: "single", legs: [legOf(f, s, o > 1 ? o : null)] }); toast("Tarixçəyə yazıldı: " + s.label); };
+}
+const legOf = (f, s, userOdd) => ({ fid: f.id, date: bakuDateOf(f.ts), ts: f.ts, h: f.h.n, a: f.a.n, lg: f.lg.c + " · " + f.lg.n, key: s.key, label: s.label, p: +s.p.toFixed(4), fair: +s.fair.toFixed(3), odd: userOdd || null, res: null, score: null });
+const bakuDateOf = ts => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(ts * 1000));
+
+// ---------- coupon tab ----------
+async function renderCoupon() {
+  const m = $("#main");
+  m.innerHTML = `<div class="card"><h2>Kupon qurucusu</h2>
+    <p class="small muted" style="margin-top:-2px">Seçilmiş liqaların oyunlarından ən yüksək ehtimallı seçimləri yığır. Hər oyundan bir seçim.</p>
+    <div class="row"><div class="seg" id="cDay"><button data-d="0">Bu gün</button><button data-d="1">Sabah</button><button data-d="2">İkisi də</button></div></div>
+    <div class="params">
+      <label>Oyun sayı<input type="number" id="pLegs" min="2" max="40" step="1"></label>
+      <label>Min. əmsal (hər oyun)<input type="number" id="pMin" min="1.01" max="5" step="0.05"></label>
+      <label>Maks. əmsal (hər oyun)<input type="number" id="pMax" min="1.05" max="10" step="0.05"></label>
+      <label>Mərc (AZN)<input type="number" id="pStake" min="0.1" step="0.1"></label>
+    </div>
+    <h3>Bazarlar</h3><div class="chips" id="mk"></div>
+    <h3 style="margin-top:14px">Liqalar</h3><div id="lgBox"><p class="muted">Yüklənir…</p></div>
+    <div id="loadBox" style="margin-top:12px"></div></div>
+    <div id="cpBox"></div>`;
+  const days = () => coupon.day === 2 ? [0, 1] : [coupon.day];
+  m.querySelectorAll("#cDay button").forEach(b => { b.setAttribute("aria-pressed", +b.dataset.d === coupon.day); b.onclick = () => { coupon.day = prefs.day = +b.dataset.d; savePrefs(); coupon.leagues = null; coupon.legs = null; renderCoupon(); }; });
+  const bind = (id, k) => { const el = $(id); el.value = prefs[k]; el.onchange = () => { const v = parseFloat(String(el.value).replace(",", ".")); if (v > 0) { prefs[k] = k === "legs" ? Math.round(v) : v; savePrefs(); build(); } }; };
+  bind("#pLegs", "legs"); bind("#pMin", "minO"); bind("#pMax", "maxO"); bind("#pStake", "stake");
+  const MK = ["1X2", "İkiqat şans", "Qollar (alt/üst)", "Hər iki komanda qol vurar"];
+  $("#mk").innerHTML = MK.map(k => `<button class="chip" type="button" data-k="${esc(k)}" aria-pressed="${prefs.mk.includes(k)}">${esc(k)}</button>`).join("");
+  $("#mk").querySelectorAll("button").forEach(b => b.onclick = () => { const k = b.dataset.k; prefs.mk = prefs.mk.includes(k) ? prefs.mk.filter(x => x !== k) : [...prefs.mk, k]; b.setAttribute("aria-pressed", prefs.mk.includes(k)); savePrefs(); build(); });
+
+  let all = [];
+  try { for (const d of days()) all = all.concat(await fixtures(bakuDate(d))); }
+  catch (e) { $("#lgBox").innerHTML = `<div class="err">${esc(errText(e))}</div>`; return; }
+  const soon = Date.now() / 1000 + 10 * 60;
+  const open = all.filter(f => (f.st === "NS" || f.st === "TBD") && f.ts > soon && !isYouthOrWomen(f));
+  const byLg = new Map(); for (const f of open) { const k = f.lg.id; if (!byLg.has(k)) byLg.set(k, { lg: f.lg, fx: [] }); byLg.get(k).fx.push(f); }
+  const lgs = [...byLg.values()].sort((a, b) => lgRank(a.fx[0]) - lgRank(b.fx[0]) || b.fx.length - a.fx.length);
+  if (!coupon.leagues) { // default: priority leagues, topped up with the busiest others to ~40 fixtures
+    const sel = new Set(); let n = 0;
+    for (const l of lgs) if (PRIORITY.has(l.lg.id)) { sel.add(l.lg.id); n += l.fx.length; }
+    for (const l of lgs) { if (n >= 40) break; if (!sel.has(l.lg.id)) { sel.add(l.lg.id); n += l.fx.length; } }
+    coupon.leagues = sel;
+  }
+  const drawLg = () => {
+    $("#lgBox").innerHTML = `<div class="row" style="margin-bottom:6px"><button class="ghost" id="lgAll" type="button">Hamısı</button><button class="ghost" id="lgNone" type="button">Heç biri</button></div>
+      <div class="lg-pick">${lgs.map(l => `<label><input type="checkbox" data-id="${l.lg.id}"${coupon.leagues.has(l.lg.id) ? " checked" : ""}> ${esc(l.lg.c)} · ${esc(l.lg.n)}<span class="c">${l.fx.length}</span></label>`).join("") || '<p class="muted">Açıq oyun yoxdur.</p>'}</div>`;
+    $("#lgBox").querySelectorAll("input").forEach(c => c.onchange = () => { const id = +c.dataset.id; c.checked ? coupon.leagues.add(id) : coupon.leagues.delete(id); drawLoad(); build(); });
+    $("#lgAll").onclick = () => { lgs.forEach(l => coupon.leagues.add(l.lg.id)); drawLg(); drawLoad(); build(); };
+    $("#lgNone").onclick = () => { coupon.leagues.clear(); drawLg(); drawLoad(); build(); };
+  };
+  const chosen = () => open.filter(f => coupon.leagues.has(f.lg.id));
+  const drawLoad = () => {
+    const c = chosen(); const need = c.filter(f => !cacheGet("od:" + f.id, 90)).length; const left = Math.max(0, 100 - quota().n - RESERVE);
+    $("#loadBox").innerHTML = coupon.loading ? `<div class="prog"><i id="pr"></i></div><p class="small muted" id="prT">Başlayır…</p><button class="ghost" id="stop" type="button">Dayandır</button>`
+      : `<p class="small">${c.length} oyun seçilib · ${need ? `<b>${need}</b> oyunun əmsalı yüklənməlidir (~${Math.max(1, Math.ceil(Math.min(need, left) / 9))} dəq.; bu gün istifadə üçün qalıb ≈ ${left} sorğu)` : "bütün əmsallar hazırdır"}</p>
+         ${need > left ? `<p class="small muted">Limit hamısına çatmır: yalnız ilk ${left} oyun yüklənəcək (vacib liqalar əvvəl).</p>` : ""}
+         ${need ? `<button class="primary" id="go" type="button"${left < 1 ? " disabled" : ""}>Əmsalları yüklə</button>` : ""}`;
+    const go = $("#go"); if (go) go.onclick = loadOdds;
+    const st = $("#stop"); if (st) st.onclick = () => { coupon.loading = false; };
+  };
+  const loadOdds = async () => {
+    const todo = chosen().filter(f => !cacheGet("od:" + f.id, 90)).sort((a, b) => lgRank(a) - lgRank(b)).slice(0, Math.max(0, 100 - quota().n - RESERVE)); coupon.loading = true; drawLoad(); let i = 0;
+    for (const f of todo) {
+      if (!coupon.loading) break;
+      try { await oddsFor(f.id, w => { const t = $("#prT"); if (t) t.textContent = `Limitə görə gözlənilir (${Math.ceil(w / 1000)} san.)… ${i}/${todo.length}`; }); }
+      catch (e) { coupon.loading = false; toast(errText(e), 4000); break; }
+      i++; const p = $("#pr"); if (p) p.style.width = (i / todo.length * 100) + "%"; const t = $("#prT"); if (t) t.textContent = `${i} / ${todo.length} oyun`;
+      if (i % 3 === 0) build();
+    }
+    coupon.loading = false; drawLoad(); build();
+  };
+  const build = () => {
+    const box = $("#cpBox"); const cands = [];
+    for (const f of chosen()) {
+      const books = cacheGet("od:" + f.id, 90); if (!books || !Object.keys(books).length) continue;
+      const A = analyze(f, books, { fast: true }); if (A.src !== "Pinnacle" && A.nBooks < 3) continue; // too thin to trust
+      const ok = A.sels.filter(s => prefs.mk.includes(s.group) && s.fair >= prefs.minO && s.fair <= prefs.maxO);
+      if (!ok.length) continue;
+      const s = ok.sort((a, b) => b.p - a.p)[0]; cands.push({ f, s, src: A.src });
+    }
+    cands.sort((a, b) => b.s.p - a.s.p);
+    const legs = cands.slice(0, prefs.legs); coupon.legs = legs;
+    if (!legs.length) { box.innerHTML = `<div class="note">Hələ kupon üçün seçim yoxdur. Əvvəlcə əmsalları yükləyin və ya əmsal aralığını genişləndirin.</div>`; return; }
+    const P = legs.reduce((a, l) => a * l.s.p, 1), F = legs.reduce((a, l) => a * l.s.fair, 1), E = legs.reduce((a, l) => a * l.s.fair * 0.94, 1);
+    const oneIn = P > 0 ? Math.round(1 / P) : Infinity;
+    box.innerHTML = `<div class="card"><h2>Kupon · ${legs.length} oyun</h2>
+      ${legs.length < prefs.legs ? `<div class="note">İstədiyiniz ${prefs.legs} oyundan yalnız ${legs.length} uyğun seçim tapıldı. Daha çox liqa seçib əmsal yükləyin və ya əmsal aralığını genişləndirin.</div>` : ""}
+      <div class="kpis"><div class="kpi"><div class="v">${P >= 0.001 ? (P * 100).toFixed(P < 0.1 ? 2 : 1) + "%" : "<0.1%"}</div><div class="k">Hamısının keçmə şansı${isFinite(oneIn) ? ` (~${oneIn.toLocaleString("az")} kupondan 1)` : ""}</div></div>
+        <div class="kpi"><div class="v">${E.toFixed(E < 100 ? 2 : 0)}</div><div class="k">Etopaz-da təxmini ümumi əmsal</div></div>
+        <div class="kpi"><div class="v">${(E * prefs.stake).toLocaleString("az", { maximumFractionDigits: 0 })} ₼</div><div class="k">${prefs.stake} AZN mərcə təxmini uduş</div></div></div>
+      <div class="legs">${legs.map((l, i) => `<div class="leg"><span class="i">${i + 1}</span><div style="min-width:0"><div class="s">${esc(l.s.label)}</div><div class="m">${dm(l.f.ts)} ${hm(l.f.ts)} · ${esc(l.f.h.n)} – ${esc(l.f.a.n)} · ${esc(l.f.lg.n)}</div></div><div class="r"><b>${pct(l.s.p)}</b><br>min ${odd(Math.ceil(l.s.fair * 100) / 100)}</div></div>`).join("")}</div>
+      <p class="small muted">Ədalətli ümumi əmsal ${F.toFixed(F < 100 ? 2 : 0)}; Etopaz hər oyunda təxminən 6% marja saxladığı üçün real əmsal aşağı olur. «min» — Etopaz-da həmin seçim üçün sərfəli minimum əmsal.</p>
+      <div class="row"><button class="primary" id="cpSave" type="button">Tarixçəyə yaz</button><button class="ghost" id="cpCopy" type="button">Kopyala</button></div></div>`;
+    $("#cpSave").onclick = () => { addHist({ type: "coupon", stake: prefs.stake, legs: legs.map(l => legOf(l.f, l.s, null)) }); toast("Kupon tarixçəyə yazıldı"); };
+    $("#cpCopy").onclick = async () => { const t = "Kupon (" + legs.length + " oyun)\n" + legs.map((l, i) => `${i + 1}. ${l.f.h.n} – ${l.f.a.n} (${dm(l.f.ts)} ${hm(l.f.ts)}): ${l.s.label} · ${pct(l.s.p)}`).join("\n") + `\nKeçmə şansı: ${(P * 100).toFixed(2)}%`;
+      try { await navigator.clipboard.writeText(t); toast("Kopyalandı"); } catch (e) { toast("Kopyalamaq olmadı"); } };
+  };
+  drawLg(); drawLoad(); build();
+}
+
+// ---------- history ----------
+function addHist(item) { const h = ls.get(LS.hist, []); h.unshift(Object.assign({ id: Date.now().toString(36), created: Date.now() }, item)); ls.set(LS.hist, h.slice(0, 400)); }
+async function checkResults(silent) {
+  const h = ls.get(LS.hist, []); const now = Date.now() / 1000;
+  const due = new Set(); for (const it of h) for (const l of it.legs) if (!l.res && l.ts + 2.2 * 3600 < now) due.add(l.date);
+  const allowed = new Set([bakuDate(-1), bakuDate(0)]); let changed = 0, skipped = 0;
+  for (const d of due) {
+    if (!allowed.has(d)) { skipped++; continue; }
+    let list; try { list = await fixtures(d, true); } catch (e) { if (!silent) toast(errText(e), 4000); return; }
+    const byId = new Map(list.map(f => [f.id, f]));
+    for (const it of h) for (const l of it.legs) if (!l.res && l.date === d) {
+      const f = byId.get(l.fid); if (!f) continue;
+      if (["FT", "AET", "PEN"].includes(f.st) && f.ft && f.ft[0] != null) { const w = settle(l.key, f.ft[0], f.ft[1]); l.res = w ? "won" : "lost"; l.score = f.ft.join(":"); changed++; }
+      else if (["PST", "CANC", "ABD", "AWD", "WO"].includes(f.st)) { l.res = "void"; l.score = f.st; changed++; }
+    }
+  }
+  ls.set(LS.hist, h);
+  if (!silent) toast(changed ? changed + " nəticə yeniləndi" : skipped ? "Köhnə oyunları pulsuz plan yoxlaya bilmir: nəticəni əl ilə qeyd edin" : "Yeni nəticə yoxdur", 3500);
+  return changed;
+}
+function couponRes(it) { const r = it.legs.map(l => l.res); if (r.includes("lost")) return "lost"; if (r.every(x => x === "won" || x === "void")) return "won"; return "pending"; }
+function renderHist() {
+  const m = $("#main"); const h = ls.get(LS.hist, []);
+  const legs = h.flatMap(it => it.legs); const done = legs.filter(l => l.res === "won" || l.res === "lost");
+  const won = done.filter(l => l.res === "won").length; const expP = done.reduce((a, l) => a + l.p, 0);
+  const singles = h.filter(it => it.type === "single").map(it => it.legs[0]).filter(l => l.odd && (l.res === "won" || l.res === "lost"));
+  const profit = singles.reduce((a, l) => a + (l.res === "won" ? l.odd - 1 : -1), 0);
+  const cps = h.filter(it => it.type === "coupon"); const cpWon = cps.filter(c => couponRes(c) === "won").length;
+  m.innerHTML = `<div class="kpis">
+      <div class="kpi"><div class="v">${done.length ? Math.round(won / done.length * 100) + "%" : "–"}</div><div class="k">Düz çıxan seçimlər (${won}/${done.length})</div></div>
+      <div class="kpi"><div class="v">${done.length ? Math.round(expP / done.length * 100) + "%" : "–"}</div><div class="k">Modelin gözlədiyi orta ehtimal</div></div>
+      <div class="kpi"><div class="v">${singles.length ? (profit >= 0 ? "+" : "") + profit.toFixed(2) : "–"}</div><div class="k">Tək mərclər: 1 AZN-lik mərclərlə qazanc (${singles.length} mərc, Etopaz əmsalı ilə)</div></div>
+      <div class="kpi"><div class="v">${cps.length ? cpWon + "/" + cps.length : "–"}</div><div class="k">Keçən kuponlar</div></div></div>
+    <div class="row" style="margin-bottom:12px"><button class="primary" id="chk" type="button">Nəticələri yoxla</button>${h.length ? '<button class="ghost" id="clr" type="button">Tarixçəni sil</button>' : ""}</div>
+    ${done.length >= 20 ? `<div class="note">Düz çıxma faizi modelin gözlədiyinə yaxındırsa, ehtimallar düzgün hesablanır. Daha aşağıdırsa, ehtiyatlı olun.</div>` : `<p class="small muted">Nəticələr dünənki və bugünkü oyunlar üçün avtomatik yoxlanılır (pulsuz plan daha köhnəsini vermir). Daha köhnəsini ✓/✗ ilə əl ilə qeyd edin.</p>`}
+    <div id="hl">${h.length ? "" : '<p class="muted">Hələ heç nə yazılmayıb. «Oyun» və ya «Kupon» bölməsindən seçimi tarixçəyə yazın.</p>'}</div>`;
+  const hl = $("#hl");
+  for (const it of h) {
+    const el = document.createElement("div"); el.className = "card hist-item";
+    const st = it.type === "coupon" ? couponRes(it) : (it.legs[0].res || "pending");
+    const lbl = { won: "Keçdi", lost: "Keçmədi", pending: "Gözləyir", void: "Ləğv" }[st];
+    const P = it.legs.reduce((a, l) => a * l.p, 1);
+    el.innerHTML = `<div class="top"><div><b>${it.type === "coupon" ? "Kupon · " + it.legs.length + " oyun" : "Tək seçim"}</b> <span class="small muted">${new Date(it.created).toLocaleDateString("az")}${it.type === "coupon" ? " · şans " + (P * 100).toFixed(2) + "%" : ""}</span></div><span class="badge ${st === "void" ? "pending" : st}">${lbl}</span></div>
+      <div class="legs">${it.legs.map((l, i) => `<div class="leg" data-res="${l.res || ""}"><span class="i">${l.res === "won" ? "✓" : l.res === "lost" ? "✗" : i + 1}</span><div style="min-width:0"><div class="s">${esc(l.label)}</div><div class="m">${dm(l.ts)} ${hm(l.ts)} · ${esc(l.h)} – ${esc(l.a)}${l.score ? " · <b>" + esc(l.score) + "</b>" : ""}</div></div>
+        <div class="r"><b>${pct(l.p)}</b>${l.odd ? "<br>Etopaz " + odd(l.odd) : ""}${!l.res ? `<br><span class="res-btns"><button type="button" data-i="${i}" data-r="won" aria-label="Düz çıxdı">✓</button><button type="button" data-i="${i}" data-r="lost" aria-label="Səhv çıxdı">✗</button></span>` : ""}</div></div>`).join("")}</div>
+      <div class="row" style="margin-top:8px"><button class="ghost small" type="button" data-del>Sil</button></div>`;
+    el.querySelectorAll(".res-btns button").forEach(b => b.onclick = () => { const all = ls.get(LS.hist, []); const x = all.find(y => y.id === it.id); x.legs[+b.dataset.i].res = b.dataset.r; ls.set(LS.hist, all); renderHist(); });
+    el.querySelector("[data-del]").onclick = () => { if (!confirm("Bu qeydi silək?")) return; ls.set(LS.hist, ls.get(LS.hist, []).filter(y => y.id !== it.id)); renderHist(); };
+    hl.append(el);
+  }
+  $("#chk").onclick = async () => { $("#chk").disabled = true; await checkResults(false); renderHist(); };
+  const c = $("#clr"); if (c) c.onclick = () => { if (confirm("Bütün tarixçə silinsin?")) { ls.set(LS.hist, []); renderHist(); } };
+}
+
+// ---------- boot ----------
+pruneCache(); showQuota(); render();
+if (getKey()) setTimeout(() => checkResults(true).then(n => { if (n && tab === "hist") renderHist(); }).catch(() => {}), 1500);
+</script>
+</body>
+</html>
