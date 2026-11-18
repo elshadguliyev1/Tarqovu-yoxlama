@@ -112,30 +112,51 @@ dialog .cap p { margin: 0 }
 .phs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1 1 100% }
 .ph { width: 56px; height: 56px; border: 1px solid var(--line); border-radius: 8px; padding: 0; overflow: hidden; background: var(--surface-2); cursor: zoom-in; display: grid; place-items: center }
 .ph img { width: 100%; height: 100%; object-fit: cover }
-.act { display: none }
+/* act: picker, on-screen preview of A4 pages, offscreen source pages for the PDF */
+.act-types { display: grid; gap: 8px; padding: 14px 14px 4px }
+.act-opt { display: grid; grid-template-columns: auto 1fr; gap: 10px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; background: var(--surface) }
+.act-opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft) }
+.act-opt input { accent-color: var(--accent); width: 18px; height: 18px; margin-top: 2px }
+.act-opt b { display: block; font: 700 15px var(--f-display) } .act-opt small { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px }
+.act-opt em { display: block; font: normal 500 12px var(--f-mono); margin-top: 4px }
+.actview { position: fixed; inset: 0; z-index: 30; background: #5b544e; overflow: auto; -webkit-overflow-scrolling: touch }
+.av-bar { position: sticky; top: 0; z-index: 1; display: flex; gap: 8px; align-items: center; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 10px; background: var(--surface); border-bottom: 1px solid var(--line) }
+.av-bar span { flex: 1; min-width: 0; font: 700 14px var(--f-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.av-pages { display: grid; justify-content: center; gap: 12px; padding: 12px 12px 40px }
+.a-slot { overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.35); background: #fff }
+.a-slot .a-page { transform-origin: 0 0 }
+body.av-open { overflow: hidden }
+#actSrc { position: fixed; left: -10000px; top: 0; pointer-events: none }
+.a-page { width: 794px; height: 1123px; padding: 46px 44px 30px; box-sizing: border-box; background: #fff; color: #111; display: flex; flex-direction: column; font: 11.5px/1.38 var(--f-body); color-scheme: light }
+.a-body { flex: 1; min-height: 0; overflow: hidden }
+.a-foot { height: 18px; padding-top: 6px; border-top: 1px solid #bbb; font: 9.5px var(--f-mono); color: #555; text-align: right }
+.a-page h1 { font: 800 21px/1.15 var(--f-display); margin: 3px 0 0 }
+.a-page h2 { font: 700 14px var(--f-display); margin: 14px 0 6px; border-bottom: 1.5px solid #111; padding-bottom: 3px }
+.a-page p { margin: 6px 0 }
+.a-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #111; padding-bottom: 8px; margin-bottom: 10px }
+.a-k { font: 600 9.5px var(--f-body); letter-spacing: .08em; text-transform: uppercase } .a-no { font: 600 12px var(--f-mono); margin-top: 3px }
+.a-date { text-align: right; font: 12px var(--f-mono) }
+.a-page table { width: 100%; border-collapse: collapse; table-layout: fixed }
+.a-page th, .a-page td { border: 1px solid #999; padding: 3px 5px; text-align: left; vertical-align: top; overflow-wrap: anywhere }
+.a-page th { background: #ececec; font-weight: 600 }
+.a-page td.r { text-align: right; white-space: nowrap; font-family: var(--f-mono); font-size: .95em }
+.a-meta th { width: 24%; background: #f4f4f4 }
+.a-sum td { font: 700 16px var(--f-mono); text-align: center } .a-sum th { text-align: center }
+.a-tbl { font-size: 10px } .a-tw.small .a-tbl { font-size: 9px } .a-tw.small td, .a-tw.small th { padding: 2px 4px }
+.a-tbl + .a-tbl, .a-tbl tbody + tbody td { border-top: 0 }
+.a-en { color: #555; font-size: 9px }
+.a-tbl tr.has-ph td { border-bottom: 0 } .a-phr td { border-top: 0 }
+.a-phs { display: flex; flex-wrap: wrap; gap: 4px } .a-phs img { height: 150px; max-width: 220px; object-fit: cover; border: 1px solid #999 }
+.a-note { font-style: italic }
+.a-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 8px } .a-sign p { margin: 14px 0 0 }
 @media print {
-  body { background: #fff }
-  body::before, body > *:not(.act) { display: none !important }
-  .act { display: block; color: #000; font: 10pt/1.35 var(--f-body) }
-  @page { size: A4; margin: 14mm 12mm }
-  .act h1 { font: 800 17pt/1.15 var(--f-display); margin: 2px 0 0 }
-  .act h2 { font: 700 12pt var(--f-display); margin: 16px 0 6px; border-bottom: 1.5px solid #000; padding-bottom: 3px }
-  .a-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px }
-  .a-k { font: 600 8.5pt var(--f-body); letter-spacing: .08em; text-transform: uppercase }
-  .a-date { text-align: right; font: 10pt var(--f-mono) }
-  .act table { width: 100%; border-collapse: collapse }
-  .act th, .act td { border: 1px solid #999; padding: 3px 5px; text-align: left; vertical-align: top }
-  .act th { background: #eee; font-weight: 600 }
-  .a-meta th { width: 26%; background: #f4f4f4 }
-  .a-sum td { font: 700 13pt var(--f-mono); text-align: center } .a-sum th { text-align: center }
-  .a-tbl { font-size: 8.5pt } .a-tbl tr { break-inside: avoid } .a-tbl thead { display: table-header-group }
-  .a-en { color: #555; font-size: 7.5pt }
-  .a-tbl tr.has-ph td { border-bottom: 0 } .a-phr td { border-top: 0 }
-  .a-phs { display: flex; flex-wrap: wrap; gap: 4px } .a-phs img { height: 42mm; max-width: 60mm; object-fit: cover; border: 1px solid #999 }
-  .a-all { font-size: 7.5pt }
-  .a-note { font-style: italic }
-  .a-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px; break-inside: avoid } .a-sign p { margin: 12px 0 0 }
-  .a-break { break-before: page }
+  @page { size: A4; margin: 0 }
+  body, .actview { background: #fff }
+  body::before, body > *:not(.actview), .av-bar { display: none !important }
+  .actview { position: static; overflow: visible }
+  .av-pages { display: block; padding: 0 }
+  .a-slot { width: auto !important; height: auto !important; box-shadow: none; break-after: page }
+  .a-slot .a-page { transform: none !important }
 }
 .tools { display: contents }
 @media (max-width: 680px) {
@@ -217,7 +238,7 @@ dialog .cap p { margin: 0 }
     <button class="tool" id="saveBtn" type="button">Yadda saxla</button>
     <button class="tool primary" id="xlsBtn" type="button">Excel-ə yüklə</button>
     <button class="tool" id="copyBtn" type="button">Problemləri kopyala</button>
-    <button class="tool" id="actBtn" type="button">📄 Akt (PDF)</button>
+    <button class="tool" id="actBtn" type="button">📄 Akt</button>
     <button class="tool" id="whoBtn" type="button">👤</button>
     </div>
     <span class="saveinfo" id="saveInfo">Yüklənir…</span>
@@ -238,7 +259,10 @@ dialog .cap p { margin: 0 }
   </div>
 </dialog>
 <input type="file" id="photoIn" accept="image/*" capture="environment" multiple hidden>
-<section class="act" id="act" aria-hidden="true"></section>
+<dialog id="actDlg" aria-label="Akt növü"><div class="act-types" id="actTypes"></div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 14px 14px"><button class="tool" id="actCancel" type="button">Ləğv et</button><button class="tool primary" id="actMake" type="button">Akt hazırla</button></div></dialog>
+<div class="actview" id="actView" hidden><div class="av-bar"><button class="tool" id="avBack" type="button">← Geri</button><span id="avTitle"></span><button class="tool" id="avPrint" type="button">Çap</button><button class="tool primary" id="avPdf" type="button">PDF yüklə</button></div><div class="av-pages" id="act"></div></div>
+<div id="actSrc" aria-hidden="true"></div>
 <div class="toast" id="toast" hidden></div>
 
 <script>/* SheetJS xlsx 0.18.5 mini, inlined so export works offline */
@@ -505,7 +529,7 @@ $("xlsBtn").onclick = async () => {
   XLSX.utils.book_append_sheet(wb, ws, "Bütün sətirlər");
   if (prob.length) { const ps = XLSX.utils.json_to_sheet(prob); ps["!cols"] = ws["!cols"]; XLSX.utils.book_append_sheet(wb, ps, "Problemlər"); }
   const todo = rows.filter(r => r.Status === "Yoxlanmayıb");
-  if (todo.length) { const ts = XLSX.utils.json_to_sheet(todo); ts["!cols"] = ws["!cols"]; ts["!autofilter"] = {ref: ts["!ref"]}; XLSX.utils.book_append_sheet(wb, ts, "Yoxlanmamışlar"); }
+  if (todo.length) { const ts = XLSX.utils.json_to_sheet(todo); ts["!cols"] = ws["!cols"]; ts["!autofilter"] = {ref: ts["!ref"]}; XLSX.utils.book_append_sheet(wb, ts, "Hələ gəlməyənlər"); }
   const buf = XLSX.write(wb, {bookType: "xlsx", type: "array"});
   const d = now.toISOString().slice(0, 10);
   const fname = "Tarqovu_yoxlama_" + d + ".xlsx";
@@ -763,49 +787,137 @@ function openPhoto(it, id) {
 $("dlg").addEventListener("close", () => { $("dlgDel").hidden = true; });
 addEventListener("online", uploadPending);
 
-// ---- acceptance act: a printable A4 document (save as PDF from the print dialog) with summary, problems + photos, signatures and all rows
-$("actBtn").onclick = async () => {
-  const a = $("act"); const eq = DATA.filter(it => !isFee(it)); const c = {ok: 0, miss: 0, dmg: 0, none: 0}; let val = 0, total = 0;
-  eq.forEach(it => { const s = status(it.k); c[s]++; total += it.total; if (s === "ok") val += it.total; if (s === "miss") val += Math.min(it.qty, Number(state[it.k].r) || 0) * it.unit; });
-  const now = new Date(), d2 = n => String(n).padStart(2, "0"), no = "TQ-" + now.getFullYear() + d2(now.getMonth() + 1) + d2(now.getDate());
-  const who = [...new Set(eq.map(it => state[it.k]?.by).filter(Boolean))];
-  const prob = eq.filter(it => ["miss", "dmg"].includes(status(it.k)));
-  const docName = it => (it.src === "order" ? "Sif. 9152632" : "Təkl. 9150395") + " / " + it.line;
-  const got = it => { const s = status(it.k); return s === "ok" || s === "dmg" ? it.qty : s === "miss" ? (Number(state[it.k].r) || 0) : "—"; };
-  const E = s => String(s ?? "").replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch]));
+// ---- acts: choose a type → A4 pages are laid out on screen (preview), then saved as a real PDF file (shared or downloaded).
+// The PDF is drawn on the phone (html2canvas + jsPDF next to the page, so it also works offline); printing stays as an extra.
+const ACT_TYPES = {
+  qebul: {t: "Qəbul-təhvil aktı", d: "Yekun, çatışmayan və zədəli mallar fotolarla, imzalar, əlavədə bütün sətirlər"},
+  problem: {t: "Çatışmazlıq və zədə aktı", d: "Yalnız çatışmayan və zədəli mallar, fotolar və itki dəyəri: təchizatçıya iddia üçün"},
+  gelmeyen: {t: "Çatdırılmamış mallar aktı", d: "Hələ gəlməyən mallar (və qismən gələnlərin qalığı): say və dəyərlə"}
+};
+let actKind = "qebul", actPdfName = "";
+const loadScript = src => new Promise((ok, no) => { if (document.querySelector('script[src="' + src + '"]')) return ok(); const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => no(new Error(src)); document.head.append(s); });
+const E = s => String(s ?? "").replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch]));
+function actCounts() {
+  const eq = DATA.filter(it => !isFee(it)), by = s => eq.filter(it => status(it.k) === s);
+  return {eq, ok: by("ok"), miss: by("miss"), dmg: by("dmg"), none: by("none")};
+}
+$("actBtn").onclick = () => {
+  const c = actCounts(), n = {qebul: c.eq.length - c.none.length, problem: c.miss.length + c.dmg.length, gelmeyen: c.none.length + c.miss.length};
+  const box = $("actTypes"); box.textContent = "";
+  Object.entries(ACT_TYPES).forEach(([k, T]) => { const l = document.createElement("label"); l.className = "act-opt";
+    l.innerHTML = '<input type="radio" name="actk"><span><b></b><small></small><em></em></span>';
+    l.querySelector("input").value = k; l.querySelector("input").checked = k === actKind; l.querySelector("b").textContent = T.t; l.querySelector("small").textContent = T.d;
+    l.querySelector("em").textContent = k === "qebul" ? n.qebul + " sətir yoxlanılıb" : k === "problem" ? n.problem + " problemli sətir" : c.none.length + " gəlməyib, " + c.miss.length + " qismən";
+    box.append(l); });
+  $("actDlg").showModal();
+};
+$("actCancel").onclick = () => $("actDlg").close();
+$("actMake").onclick = async () => { actKind = document.querySelector('input[name="actk"]:checked')?.value || "qebul"; $("actDlg").close(); await buildAct(actKind); };
+
+async function buildAct(kind) {
+  const T = ACT_TYPES[kind], c = actCounts(), now = new Date(), d2 = n => String(n).padStart(2, "0");
+  const ymd = now.getFullYear() + d2(now.getMonth() + 1) + d2(now.getDate());
+  const no = {qebul: "QT", problem: "ÇZ", gelmeyen: "ÇM"}[kind] + "-" + ymd, dateTxt = d2(now.getDate()) + "." + d2(now.getMonth() + 1) + "." + now.getFullYear();
+  actPdfName = "Tarqovu_" + {qebul: "Qebul_aktı", problem: "Catismazliq_akti", gelmeyen: "Catdirilmamis_akti"}[kind].replace("ı", "i") + "_" + now.toISOString().slice(0, 10) + ".pdf";
   toast("Akt hazırlanır…");
-  const photos = {}; for (const it of prob) photos[it.k] = (await Promise.all((state[it.k]?.ph || []).map(loadPhoto))).filter(Boolean);
-  const missingPh = prob.reduce((n, it) => n + (state[it.k]?.ph || []).length - photos[it.k].length, 0);
-  a.innerHTML = `
-  <div class="a-head"><div><div class="a-k">Popeyes · Tarqovu filialı</div><h1>Qəbul-təhvil aktı № ${no}</h1></div><div class="a-date">${d2(now.getDate())}.${d2(now.getMonth() + 1)}.${now.getFullYear()}<br>${E(hhmm())}</div></div>
-  <table class="a-meta">
-    <tr><th>Obyekt</th><td>Popeyes, Tarqovu filialı, Bakı, Nizami küç. 62A</td></tr>
-    <tr><th>Təchizatçı</th><td>Franke, layihə 693107</td></tr>
-    <tr><th>Əsas sənədlər</th><td>Sifariş təsdiqi 9152632 (14.07.2026), qiymət təklifi 9150395 (26.05.2026)</td></tr>
-    <tr><th>Yoxlayanlar</th><td>${E(who.join(", ") || "—")}</td></tr>
-  </table>
-  <h2>1. Yekun</h2>
-  <table class="a-sum"><tr><th>Avadanlıq sətri</th><th>Tam gəldi</th><th>Çatışmır</th><th>Zədəli</th><th>Yoxlanmayıb</th></tr>
-    <tr><td>${eq.length}</td><td>${c.ok}</td><td>${c.miss}</td><td>${c.dmg}</td><td>${c.none}</td></tr></table>
-  <p>Avadanlığın ümumi dəyəri <b>${money(total)}</b>, bunun <b>${money(val)}</b> qədəri tam və zədəsiz qəbul edilmişdir (ƏDV və ödənişlər daxil deyil).</p>
-  <h2>2. Çatışmayan və zədəli mallar</h2>
-  ${prob.length ? `<table class="a-tbl"><thead><tr><th>№</th><th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Sifariş</th><th>Gəlib</th><th>Status</th><th>Qeyd</th><th>Yoxlayan</th></tr></thead><tbody>
-    ${prob.map((it, i) => { const st = state[it.k] || {}; return `<tr class="${photos[it.k].length ? "has-ph" : ""}"><td>${i + 1}</td><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}<div class="a-en">${E(it.en)}</div></td><td>${num(it.qty)} ${UOM(it.uom)}</td><td>${got(it)}</td><td><b>${ST[status(it.k)].t}</b></td><td>${E(st.n || "")}</td><td>${E(st.by || "")}${st.at ? "<br>" + fmtAt(st.at) : ""}</td></tr>
-      ${photos[it.k].length ? `<tr class="a-phr"><td></td><td colspan="8"><div class="a-phs">${photos[it.k].map(d => `<img src="${d}" alt="">`).join("")}</div></td></tr>` : ""}`; }).join("")}
-  </tbody></table>${missingPh ? `<p class="a-note">${missingPh} foto bu telefona hələ yüklənməyib.</p>` : ""}` : "<p>Çatışmayan və ya zədəli mal qeyd olunmayıb.</p>"}
-  ${c.none ? `<p class="a-note">Diqqət: ${c.none} sətir hələ yoxlanmayıb (siyahı əlavədədir).</p>` : ""}
-  <h2>3. İmzalar</h2>
-  <p>Yuxarıda göstərilən avadanlıq qeyd olunan qüsur və çatışmazlıqlarla təhvil verilmiş və qəbul edilmişdir. Çatışmayan və zədəli mallar üzrə iddia hüququ saxlanılır.</p>
-  <div class="a-sign">
-    <div><b>Təhvil verdi</b> (təchizatçı / daşıyıcı)<p>Ad, soyad: ____________________</p><p>Vəzifə: ______________________</p><p>İmza: ________  Tarix: ________</p></div>
-    <div><b>Qəbul etdi</b> (Popeyes, Tarqovu)<p>Ad, soyad: ____________________</p><p>Vəzifə: ______________________</p><p>İmza: ________  Tarix: ________</p></div>
-  </div>
-  <h2 class="a-break">Əlavə: bütün sətirlər</h2>
-  <table class="a-tbl a-all"><thead><tr><th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Sifariş</th><th>Gəlib</th><th>Status</th><th>Yoxlayan</th></tr></thead><tbody>
-    ${eq.map(it => { const st = state[it.k] || {}; return `<tr><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}</td><td>${num(it.qty)}</td><td>${got(it)}</td><td>${ST[status(it.k)].t}</td><td>${E(st.by || "")}</td></tr>`; }).join("")}
-  </tbody></table>`;
-  await Promise.all([...a.querySelectorAll("img")].map(i => i.decode().catch(() => {})));
-  window.print();
+  const who = [...new Set(c.eq.map(it => state[it.k]?.by).filter(Boolean))];
+  const docName = it => (it.src === "order" ? "Sif. 9152632" : "Təkl. 9150395") + " / " + it.line;
+  const gotN = it => { const s = status(it.k); return s === "ok" || s === "dmg" ? it.qty : s === "miss" ? Math.min(it.qty, Number(state[it.k].r) || 0) : 0; };
+  const prob = [...c.miss, ...c.dmg].sort((a, b) => DATA.indexOf(a) - DATA.indexOf(b));
+  const photos = {}; if (kind !== "gelmeyen") for (const it of prob) photos[it.k] = (await Promise.all((state[it.k]?.ph || []).map(id => Promise.race([loadPhoto(id), new Promise(r => setTimeout(() => r(null), 8000))])))).filter(Boolean);
+  let val = 0; c.ok.forEach(it => val += it.total); c.miss.forEach(it => val += gotN(it) * it.unit);
+  const total = c.eq.reduce((a, i) => a + i.total, 0);
+  const B = []; // blocks: {html} | {h2, cols, head, rows} | {brk:true}
+  B.push({html: `<div class="a-head"><div><div class="a-k">Popeyes · Tarqovu filialı</div><h1>${E(T.t)}</h1><div class="a-no">№ ${no}</div></div><div class="a-date">${dateTxt}<br>${E(hhmm())}</div></div>
+  <table class="a-meta"><tr><th>Obyekt</th><td>Popeyes, Tarqovu filialı, Bakı, Nizami küç. 62A</td></tr><tr><th>Təchizatçı</th><td>Franke, layihə 693107</td></tr>
+  <tr><th>Əsas sənədlər</th><td>Sifariş təsdiqi 9152632 (14.07.2026), qiymət təklifi 9150395 (26.05.2026)</td></tr><tr><th>Yoxlayanlar</th><td>${E(who.join(", ") || "—")}</td></tr></table>`});
+  const sign = intro => ({html: `<h2>İmzalar</h2><p>${intro}</p><div class="a-sign">
+    <div><b>Təhvil verdi</b> (təchizatçı / daşıyıcı)<p>Ad, soyad: ______________________</p><p>Vəzifə: ________________________</p><p>İmza: __________  Tarix: __________</p></div>
+    <div><b>Qəbul etdi</b> (Popeyes, Tarqovu)<p>Ad, soyad: ______________________</p><p>Vəzifə: ________________________</p><p>İmza: __________  Tarix: __________</p></div></div>`});
+  const probTable = h2 => ({h2, cols: [4, 13, 9, 30, 8, 7, 9, 12, 8], head: "<th>№</th><th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Sifariş</th><th>Gəlib</th><th>Status</th><th>Qeyd</th><th>Yoxlayan</th>",
+    rows: prob.map((it, i) => { const st = state[it.k] || {}, ph = photos[it.k] || [];
+      return `<tr class="${ph.length ? "has-ph" : ""}"><td>${i + 1}</td><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}<div class="a-en">${E(it.en)}</div></td><td>${num(it.qty)} ${UOM(it.uom)}</td><td>${gotN(it)}</td><td><b>${ST[status(it.k)].t}</b></td><td>${E(st.n || "")}</td><td>${E(st.by || "")}${st.at ? "<br>" + fmtAt(st.at) : ""}</td></tr>`
+        + (ph.length ? `<tr class="a-phr"><td></td><td colspan="8"><div class="a-phs">${ph.map(d => `<img src="${d}" alt="">`).join("")}</div></td></tr>` : ""); })});
+  if (kind === "qebul") {
+    B.push({html: `<h2>1. Yekun</h2><table class="a-sum"><tr><th>Avadanlıq sətri</th><th>Tam gəldi</th><th>Çatışmır</th><th>Zədəli</th><th>Hələ gəlməyib</th></tr>
+      <tr><td>${c.eq.length}</td><td>${c.ok.length}</td><td>${c.miss.length}</td><td>${c.dmg.length}</td><td>${c.none.length}</td></tr></table>
+      <p>Avadanlığın ümumi dəyəri <b>${money(total)}</b>, bunun <b>${money(val)}</b> qədəri tam və zədəsiz qəbul edilmişdir (ƏDV və ödənişlər daxil deyil).</p>`});
+    if (prob.length) B.push(probTable("2. Çatışmayan və zədəli mallar")); else B.push({html: "<h2>2. Çatışmayan və zədəli mallar</h2><p>Qeyd olunmayıb.</p>"});
+    if (c.none.length) B.push({html: `<p class="a-note">${c.none.length} sətir hələ gəlməyib. Onlar üçün ayrıca "Çatdırılmamış mallar aktı" tərtib oluna bilər.</p>`});
+    B.push(sign("Yuxarıda göstərilən avadanlıq qeyd olunan qüsur və çatışmazlıqlarla təhvil verilmiş və qəbul edilmişdir. Çatışmayan və zədəli mallar üzrə iddia hüququ saxlanılır."));
+    B.push({brk: true});
+    B.push({h2: "Əlavə: bütün sətirlər", small: true, cols: [15, 11, 44, 8, 7, 15], head: "<th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Sifariş</th><th>Gəlib</th><th>Status</th>",
+      rows: c.eq.map(it => `<tr><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}</td><td>${num(it.qty)}</td><td>${status(it.k) === "none" ? "—" : gotN(it)}</td><td>${status(it.k) === "none" ? "Hələ gəlməyib" : ST[status(it.k)].t}</td></tr>`)});
+  }
+  if (kind === "problem") {
+    const loss = c.miss.reduce((a, it) => a + (it.qty - gotN(it)) * it.unit, 0) + c.dmg.reduce((a, it) => a + it.total, 0);
+    B.push({html: `<p>Bu akt ${dateTxt} tarixində aparılan yoxlama zamanı aşkar edilmiş çatışmayan və zədəli avadanlığı təsdiq edir. Problemli sətir: <b>${prob.length}</b> (çatışmır: ${c.miss.length}, zədəli: ${c.dmg.length}). Çatışmayan və zədəli malların dəyəri: <b>${money(loss)}</b> (sifariş qiymətləri ilə, ƏDV daxil deyil).</p>`});
+    if (prob.length) B.push(probTable("Çatışmayan və zədəli mallar")); else B.push({html: "<p>Çatışmayan və ya zədəli mal qeyd olunmayıb.</p>"});
+    B.push(sign("Tərəflər yuxarıdakı çatışmazlıq və zədələri təsdiq edir. Təchizatçı çatışmayan malları çatdırmalı, zədəli malları dəyişdirməlidir."));
+  }
+  if (kind === "gelmeyen") {
+    const partVal = c.miss.reduce((a, it) => a + (it.qty - gotN(it)) * it.unit, 0), noneVal = c.none.reduce((a, it) => a + it.total, 0);
+    B.push({html: `<p>${dateTxt} tarixinə aşağıdakı mallar obyektə çatdırılmamışdır: heç gəlməyən <b>${c.none.length}</b> sətir (${money(noneVal)}) və qismən gələn <b>${c.miss.length}</b> sətrin qalığı (${money(partVal)}). Cəmi çatdırılmamış dəyər: <b>${money(noneVal + partVal)}</b> (sifariş qiymətləri ilə, ƏDV daxil deyil).</p>`});
+    if (c.none.length) B.push({h2: "1. Heç gəlməyən mallar", cols: [5, 15, 11, 39, 9, 10, 11], head: "<th>№</th><th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Say</th><th>Qiymət</th><th>Cəmi</th>",
+      rows: c.none.map((it, i) => `<tr><td>${i + 1}</td><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}<div class="a-en">${E(it.en)}</div></td><td>${num(it.qty)} ${UOM(it.uom)}</td><td class="r">${money(it.unit)}</td><td class="r">${money(it.total)}</td></tr>`)});
+    if (c.miss.length) B.push({h2: (c.none.length ? "2. " : "") + "Qismən gələn mallar (qalıq)", cols: [5, 15, 11, 33, 8, 7, 9, 12], head: "<th>№</th><th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Sifariş</th><th>Gəlib</th><th>Gəlməyib</th><th>Dəyər</th>",
+      rows: c.miss.map((it, i) => `<tr><td>${i + 1}</td><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}${state[it.k]?.n ? `<div class="a-en">${E(state[it.k].n)}</div>` : ""}</td><td>${num(it.qty)}</td><td>${gotN(it)}</td><td><b>${num(it.qty - gotN(it))}</b></td><td class="r">${money((it.qty - gotN(it)) * it.unit)}</td></tr>`)});
+    if (!c.none.length && !c.miss.length) B.push({html: "<p>Bütün mallar çatdırılıb.</p>"});
+    B.push(sign("Tərəflər yuxarıdakı malların hələ çatdırılmadığını təsdiq edir. Təchizatçı bu malları əlavə razılaşdırılmış müddətdə çatdırmalıdır."));
+  }
+  paginate(B, no);
+  const imgs = [...$("actSrc").querySelectorAll("img")]; await Promise.all(imgs.map(i => i.decode().catch(() => {})));
+  showActView(T.t);
+}
+function paginate(blocks, no) {
+  const src = $("actSrc"); src.textContent = ""; let body;
+  const newPage = () => { const pg = document.createElement("div"); pg.className = "a-page"; body = document.createElement("div"); body.className = "a-body"; const f = document.createElement("div"); f.className = "a-foot"; pg.append(body, f); src.append(pg); };
+  const fits = () => body.scrollHeight <= body.clientHeight + 1;
+  const mkTable = (b, first) => { const w = document.createElement("div"); w.className = "a-tw" + (b.small ? " small" : "");
+    w.innerHTML = (first && b.h2 ? `<h2>${E(b.h2)}</h2>` : "") + `<table class="a-tbl"><colgroup>${b.cols.map(x => `<col style="width:${x}%">`).join("")}</colgroup><thead><tr>${b.head}</tr></thead></table>`; body.append(w); return w.querySelector("table"); };
+  newPage();
+  for (const b of blocks) {
+    if (b.brk) { if (body.childElementCount) newPage(); continue; }
+    if (b.rows) {
+      let t = mkTable(b, true), n = 0;
+      for (const r of b.rows) {
+        t.insertAdjacentHTML("beforeend", "<tbody>" + r + "</tbody>");
+        if (!fits()) { t.lastElementChild.remove(); if (!n) t.parentElement.remove(); newPage(); t = mkTable(b, !n); t.insertAdjacentHTML("beforeend", "<tbody>" + r + "</tbody>"); }
+        n++;
+      }
+      continue;
+    }
+    const w = document.createElement("div"); w.className = "a-blk"; w.innerHTML = b.html; body.append(w);
+    if (!fits() && body.childElementCount > 1) { w.remove(); newPage(); body.append(w); }
+  }
+  const pages = [...src.children]; pages.forEach((p, i) => p.querySelector(".a-foot").textContent = "Akt № " + no + " · Səhifə " + (i + 1) + " / " + pages.length);
+}
+function showActView(title) {
+  $("avTitle").textContent = title; const box = $("act"); box.textContent = "";
+  const s = Math.min(1, (Math.min(innerWidth, 900) - 24) / 794);
+  [...$("actSrc").children].forEach(p => { const slot = document.createElement("div"); slot.className = "a-slot"; slot.style.width = 794 * s + "px"; slot.style.height = 1123 * s + "px";
+    const c = p.cloneNode(true); c.style.transform = "scale(" + s + ")"; slot.append(c); box.append(slot); });
+  $("actView").hidden = false; document.body.classList.add("av-open"); $("actView").scrollTop = 0;
+}
+function closeActView() { $("actView").hidden = true; document.body.classList.remove("av-open"); }
+$("avBack").onclick = closeActView;
+$("avPrint").onclick = () => { try { window.print(); } catch (e) { toast("Bu brauzer çap etmir: PDF düyməsini istifadə edin"); } };
+$("avPdf").onclick = async () => {
+  const btn = $("avPdf"); if (btn.disabled) return; btn.disabled = true; const old = btn.textContent; btn.textContent = "Hazırlanır…";
+  try {
+    await loadScript("html2canvas.min.js"); await loadScript("jspdf.min.js");
+    const pages = [...$("actSrc").children], pdf = new window.jspdf.jsPDF({unit: "mm", format: "a4", compress: true});
+    for (let i = 0; i < pages.length; i++) {
+      btn.textContent = "Səhifə " + (i + 1) + " / " + pages.length;
+      const cv = await html2canvas(pages[i], {scale: 1.75, backgroundColor: "#ffffff", logging: false, useCORS: true});
+      if (i) pdf.addPage(); pdf.addImage(cv.toDataURL("image/jpeg", .82), "JPEG", 0, 0, 210, 297);
+    }
+    const blob = pdf.output("blob"), file = new File([blob], actPdfName, {type: "application/pdf"});
+    if (navigator.canShare && navigator.canShare({files: [file]}) && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)) {
+      try { await navigator.share({files: [file], title: actPdfName}); } catch (e) { if (e.name !== "AbortError") throw e; }
+    } else { const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = actPdfName; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); toast("PDF yükləndi"); }
+  } catch (e) { toast("PDF hazırlamaq olmadı: " + (e && e.message || e)); }
+  btn.disabled = false; btn.textContent = old;
 };
 fillSec();
 boot();
