@@ -530,6 +530,8 @@ $("xlsBtn").onclick = async () => {
   if (prob.length) { const ps = XLSX.utils.json_to_sheet(prob); ps["!cols"] = ws["!cols"]; XLSX.utils.book_append_sheet(wb, ps, "Problemlər"); }
   const todo = rows.filter(r => r.Status === "Yoxlanmayıb");
   if (todo.length) { const ts = XLSX.utils.json_to_sheet(todo); ts["!cols"] = ws["!cols"]; ts["!autofilter"] = {ref: ts["!ref"]}; XLSX.utils.book_append_sheet(wb, ts, "Hələ gəlməyənlər"); }
+  const noted = rows.filter(r => r.Qeyd).map(r => ({"Sənəd": r["Sənəd"], "Bölmə": r["Bölmə"], "Sətir": r["Sətir"], "Kod": r.Kod, "Ad (AZ)": r["Ad (AZ)"], "Status": r.Status, "Gələn say": r["Gələn say"], "Miqdar": r.Miqdar, "Qeyd": r.Qeyd, "Foto": r.Foto, "Yoxlayan": r.Yoxlayan, "Vaxt": r.Vaxt}));
+  if (noted.length) { const ns = XLSX.utils.json_to_sheet(noted); ns["!cols"] = [16, 22, 7, 14, 42, 14, 10, 8, 60, 6, 16, 13].map(w => ({wch: w})); ns["!autofilter"] = {ref: ns["!ref"]}; XLSX.utils.book_append_sheet(wb, ns, "Qeydlər"); }
   const buf = XLSX.write(wb, {bookType: "xlsx", type: "array"});
   const d = now.toISOString().slice(0, 10);
   const fname = "Tarqovu_yoxlama_" + d + ".xlsx";
