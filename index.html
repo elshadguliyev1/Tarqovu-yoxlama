@@ -504,6 +504,8 @@ $("xlsBtn").onclick = async () => {
   XLSX.utils.book_append_sheet(wb, sum, "Xülasə");
   XLSX.utils.book_append_sheet(wb, ws, "Bütün sətirlər");
   if (prob.length) { const ps = XLSX.utils.json_to_sheet(prob); ps["!cols"] = ws["!cols"]; XLSX.utils.book_append_sheet(wb, ps, "Problemlər"); }
+  const todo = rows.filter(r => r.Status === "Yoxlanmayıb");
+  if (todo.length) { const ts = XLSX.utils.json_to_sheet(todo); ts["!cols"] = ws["!cols"]; ts["!autofilter"] = {ref: ts["!ref"]}; XLSX.utils.book_append_sheet(wb, ts, "Yoxlanmamışlar"); }
   const buf = XLSX.write(wb, {bookType: "xlsx", type: "array"});
   const d = now.toISOString().slice(0, 10);
   const fname = "Tarqovu_yoxlama_" + d + ".xlsx";
