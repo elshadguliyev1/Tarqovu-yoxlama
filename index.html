@@ -259,6 +259,12 @@ body.av-open { overflow: hidden }
   </div>
 </dialog>
 <input type="file" id="photoIn" accept="image/*" capture="environment" multiple hidden>
+<dialog id="nameDlg" aria-label="Adınız"><form id="nameForm" style="padding:16px;display:grid;gap:10px;min-width:min(86vw,360px)">
+  <b style="font:700 16px var(--f-display)">Adınız</b><span style="color:var(--muted);font-size:13px">Siyahıda, Excel-də və aktda kimin yoxladığı görünəcək. Hər telefonda bir dəfə yazılır.</span>
+  <input id="nameIn" autocomplete="name" maxlength="40" placeholder="Məs.: Əli Məmmədov" style="border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:9px;padding:9px 10px;font:15px var(--f-body)">
+  <label id="nameFill" class="scan-mode" hidden><input type="checkbox" id="nameFillCb"> <span>Adsız qeyd olunmuş <b id="nameFillN">0</b> sətrə də bu adı yaz</span></label>
+  <div style="display:flex;gap:8px;justify-content:flex-end"><button class="tool" id="nameLater" type="button">Sonra</button><button class="tool primary" type="submit">Yadda saxla</button></div>
+</form></dialog>
 <dialog id="actDlg" aria-label="Akt növü"><div class="act-types" id="actTypes"></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;padding:10px 14px 14px"><button class="tool" id="actCancel" type="button">Ləğv et</button><button class="tool primary" id="actMake" type="button">Akt hazırla</button></div></dialog>
 <div class="actview" id="actView" hidden><div class="av-bar"><button class="tool" id="avBack" type="button">← Geri</button><span id="avTitle"></span><button class="tool" id="avPrint" type="button">Çap</button><button class="tool primary" id="avPdf" type="button">PDF yüklə</button></div><div class="av-pages" id="act"></div></div>
@@ -719,17 +725,31 @@ addEventListener("keydown", e => {
 // ---- who checked: each phone gives its name once; every status / count / note / photo change records who and when
 const LS_NAME = "tarqovu-name";
 let me = (() => { try { return localStorage.getItem(LS_NAME) || ""; } catch (e) { return ""; } })(), nameAsked = false;
+// the page's own dialog (prompt() is silently blocked in home-screen apps and in WhatsApp/Telegram browsers)
 function askName(force) {
   if ((me || nameAsked) && !force) return me; nameAsked = true;
-  const n = (prompt("Adınızı yazın: siyahıda kimin yoxladığı görünəcək", me) || "").trim().slice(0, 40);
-  if (n) { me = n; try { localStorage.setItem(LS_NAME, n); } catch (e) {} }
-  renderWho(); return me;
+  if (!$("nameDlg").open) {
+    $("nameIn").value = me;
+    const orphan = DATA.filter(it => { const st = state[it.k]; return st && !st.by && (st.s || st.n || (st.ph || []).length); }).length;
+    $("nameFill").hidden = !orphan; $("nameFillN").textContent = orphan; $("nameFillCb").checked = !me && orphan > 0;
+    $("nameDlg").showModal(); setTimeout(() => $("nameIn").focus(), 50);
+  }
+  return me;
 }
+$("nameForm").onsubmit = e => {
+  e.preventDefault(); const n = $("nameIn").value.trim().slice(0, 40); if (!n) { $("nameIn").focus(); return; }
+  me = n; try { localStorage.setItem(LS_NAME, n); } catch (x) {}
+  // rows marked before the name was known (or marked without a name): fill in who did them if asked
+  if (!$("nameFill").hidden && $("nameFillCb").checked) DATA.forEach(it => { const st = state[it.k]; if (st && !st.by && (st.s || st.n || (st.ph || []).length)) { state[it.k] = Object.assign({}, st, {by: me, at: st.at || Date.now()}); persistKey(it.k); } });
+  $("nameDlg").close(); renderWho(); renderAll(); toast("Ad yadda saxlanıldı: " + me);
+};
+$("nameLater").onclick = () => $("nameDlg").close();
 function renderWho() { $("whoBtn").textContent = "👤 " + (me || "Adınız"); }
 const p2 = n => String(n).padStart(2, "0");
 const fmtAt = t => { const d = new Date(t); return p2(d.getDate()) + "." + p2(d.getMonth() + 1) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()); };
-$("whoBtn").onclick = () => { askName(true); renderList(); };
+$("whoBtn").onclick = () => askName(true);
 renderWho();
+if (!me) setTimeout(() => askName(), 600); // ask once when the page opens, before anything is marked
 
 // ---- photos: compressed on the phone, kept in this phone's IndexedDB at once (works offline), then uploaded as their own
 // documents (yoxlama/foto_<id>) so the main checklist document stays small. A row only stores the photo ids (state[k].ph).
@@ -814,7 +834,7 @@ $("actBtn").onclick = () => {
   $("actDlg").showModal();
 };
 $("actCancel").onclick = () => $("actDlg").close();
-$("actMake").onclick = async () => { actKind = document.querySelector('input[name="actk"]:checked')?.value || "qebul"; $("actDlg").close(); await buildAct(actKind); };
+$("actMake").onclick = async () => { if (!me) { $("actDlg").close(); askName(true); return; } actKind = document.querySelector('input[name="actk"]:checked')?.value || "qebul"; $("actDlg").close(); await buildAct(actKind); };
 
 async function buildAct(kind) {
   const T = ACT_TYPES[kind], c = actCounts(), now = new Date(), d2 = n => String(n).padStart(2, "0");
@@ -832,7 +852,7 @@ async function buildAct(kind) {
   const B = []; // blocks: {html} | {h2, cols, head, rows} | {brk:true}
   B.push({html: `<div class="a-head"><div><div class="a-k">Popeyes · Tarqovu filialı</div><h1>${E(T.t)}</h1><div class="a-no">№ ${no}</div></div><div class="a-date">${dateTxt}<br>${E(hhmm())}</div></div>
   <table class="a-meta"><tr><th>Obyekt</th><td>Popeyes, Tarqovu filialı, Bakı, Nizami küç. 62A</td></tr><tr><th>Təchizatçı</th><td>Franke, layihə 693107</td></tr>
-  <tr><th>Əsas sənədlər</th><td>Sifariş təsdiqi 9152632 (14.07.2026), qiymət təklifi 9150395 (26.05.2026)</td></tr><tr><th>Yoxlayanlar</th><td>${E(who.join(", ") || "—")}</td></tr></table>`});
+  <tr><th>Əsas sənədlər</th><td>Sifariş təsdiqi 9152632 (14.07.2026), qiymət təklifi 9150395 (26.05.2026)</td></tr><tr><th>Yoxlayanlar</th><td>${E(who.join(", ") || me || "—")}</td></tr><tr><th>Aktı tərtib etdi</th><td>${E(me || "—")}</td></tr></table>`});
   const sign = intro => ({html: `<h2>İmzalar</h2><p>${intro}</p><div class="a-sign">
     <div><b>Təhvil verdi</b> (təchizatçı / daşıyıcı)<p>Ad, soyad: ______________________</p><p>Vəzifə: ________________________</p><p>İmza: __________  Tarix: __________</p></div>
     <div><b>Qəbul etdi</b> (Popeyes, Tarqovu)<p>Ad, soyad: ______________________</p><p>Vəzifə: ________________________</p><p>İmza: __________  Tarix: __________</p></div></div>`});
