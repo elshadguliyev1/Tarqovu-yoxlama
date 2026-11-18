@@ -116,6 +116,23 @@ dialog .cap p { margin: 0 }
   .extra { grid-column: 1 / -1 }
   .saveinfo { margin-left: 0; width: 100% }
 }
+/* barcode scanner */
+#scanDlg { width: min(94vw, 520px) }
+.scan-cam { position: relative; background: #000; aspect-ratio: 4 / 3; overflow: hidden }
+.scan-cam video { width: 100%; height: 100%; object-fit: cover; display: block }
+.scan-cam .aim { position: absolute; inset: 28% 10%; border: 2px solid var(--accent); border-radius: 10px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); pointer-events: none }
+.scan-cam .msg { position: absolute; inset: auto 0 0; padding: 8px 12px; color: #fff; font-size: 13px; background: linear-gradient(transparent, rgba(0,0,0,.7)) }
+.scan-body { padding: 12px 14px 14px; display: grid; gap: 10px }
+.scan-row { display: flex; gap: 8px }
+.scan-row input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 9px; padding: 8px 10px; font: 14px var(--f-mono) }
+.scan-res { display: grid; gap: 8px }
+.scan-hit { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 8px; background: var(--surface) }
+.scan-hit img { width: 56px; height: 48px; object-fit: contain; background: #fff; border-radius: 6px }
+.scan-hit .t { font-weight: 600; font-size: 14px; line-height: 1.25 }
+.scan-hit .m { font: 12px var(--f-mono); color: var(--muted) }
+.scan-hit .acts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px }
+.scan-hit .acts .st { flex: 1 1 auto }
+.scan-code { font: 500 13px var(--f-mono); color: var(--muted) }
 @media (prefers-reduced-motion: no-preference) { .item { transition: background .15s, border-color .15s } }
 </style>
 
@@ -142,6 +159,7 @@ dialog .cap p { margin: 0 }
     </div>
     <select id="secSel" aria-label="Bölmə"></select>
     <input type="search" id="q" placeholder="Axtar: ad, kod, model…" aria-label="Axtar">
+    <button class="tool primary" id="scanBtn" type="button">📷 Barkod skan et</button>
     <button class="tool" id="resumeBtn" type="button">Qaldığım yerə keç</button>
     <button class="tool" id="saveBtn" type="button">Yadda saxla</button>
     <button class="tool primary" id="xlsBtn" type="button">Excel-ə yüklə</button>
@@ -153,6 +171,14 @@ dialog .cap p { margin: 0 }
 <main class="wrap" id="list"></main>
 
 <dialog id="dlg"><div class="big"><img id="dlgImg" alt=""></div><div class="cap"><div><p id="dlgAz" style="font-weight:600"></p><p id="dlgEn" style="color:var(--muted);font-size:13px"></p></div><button class="tool" id="dlgClose" type="button">Bağla</button></div></dialog>
+<dialog id="scanDlg" aria-label="Barkod skaneri">
+  <div class="scan-cam" id="scanCam"><video id="scanVid" playsinline muted></video><div class="aim"></div><div class="msg" id="scanMsg">Kamera açılır…</div></div>
+  <div class="scan-body">
+    <div class="scan-row"><input id="scanIn" inputmode="text" autocomplete="off" placeholder="Kodu əl ilə yazın və ya USB skanerlə oxudun" aria-label="Barkod"><button class="tool primary" id="scanGo" type="button">Tap</button></div>
+    <div class="scan-res" id="scanRes"></div>
+    <div class="scan-row"><button class="tool" id="scanTorch" type="button" hidden>🔦 İşıq</button><span style="flex:1"></span><button class="tool" id="scanClose" type="button">Bağla</button></div>
+  </div>
+</dialog>
 <div class="toast" id="toast" hidden></div>
 
 <script>/* SheetJS xlsx 0.18.5 mini, inlined so export works offline */
@@ -207,7 +233,7 @@ function matches(it) {
   if (view.src !== "all" && it.src !== view.src) return false;
   if (view.sec !== "all" && it.sec !== view.sec) return false;
   if (view.st !== "all" && (isFee(it) || status(it.k) !== view.st)) return false;
-  if (view.q) { const h = (it.az + " " + it.en + " " + it.part + " " + it.spec + " " + (SEC_AZ[it.sec]||"")).toLowerCase(); if (!view.q.toLowerCase().split(/\s+/).every(w => h.includes(w))) return false; }
+  if (view.q) { const h = (it.az + " " + it.en + " " + it.part + " " + it.spec + " " + (SEC_AZ[it.sec]||"") + " " + (state[it.k]?.bc || []).join(" ")).toLowerCase(); if (!view.q.toLowerCase().split(/\s+/).every(w => h.includes(w))) return false; }
   return true;
 }
 
@@ -363,6 +389,7 @@ function fillSec() {
   view.sec = secs.includes(cur) ? cur : "all"; sel.value = view.sec;
 }
 $("secSel").onchange = e => { view.sec = e.target.value; renderAll(); };
+$("q").onkeydown = e => { if (e.key !== "Enter") return; const hits = findByCode(e.target.value); if (hits.length === 1) { e.preventDefault(); e.target.value = ""; view.q = ""; renderList(); showInList(hits[0]); } };
 let qt; $("q").oninput = e => { clearTimeout(qt); qt = setTimeout(() => { view.q = e.target.value.trim(); renderList(); }, 150); };
 $("copyBtn").onclick = async () => {
   const rows = DATA.filter(it => !isFee(it) && ["miss","dmg"].includes(status(it.k)));
@@ -393,9 +420,9 @@ $("xlsBtn").onclick = async () => {
     return {"Sənəd": it.src === "order" ? "Sifariş 9152632" : "Təklif 9150395", "Bölmə": SEC_AZ[it.sec] || it.sec, "Sətir": it.line, "Kod": it.part,
       "Ad (AZ)": it.az, "Ad (EN)": it.en, "Xüsusiyyətlər": it.spec, "Miqdar": it.qty, "Vahid": UOM(it.uom),
       "Vahid qiymət (EUR)": it.unit, "Cəmi (EUR)": it.total, "Status": s ? ST_TXT[s] : "Ödəniş (avadanlıq deyil)",
-      "Gələn say": got, "Çatışmayan say": s === "miss" ? Math.max(0, it.qty - (Number(st.r) || 0)) : (s ? 0 : null), "Qeyd": st.n || ""}; });
+      "Gələn say": got, "Çatışmayan say": s === "miss" ? Math.max(0, it.qty - (Number(st.r) || 0)) : (s ? 0 : null), "Qeyd": st.n || "", "Barkod": (st.bc || []).join(", ")}; });
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws["!cols"] = [16, 22, 7, 14, 42, 38, 50, 8, 10, 14, 14, 22, 10, 13, 40].map(w => ({wch: w}));
+  ws["!cols"] = [16, 22, 7, 14, 42, 38, 50, 8, 10, 14, 14, 22, 10, 13, 40, 18].map(w => ({wch: w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const eq = DATA.filter(it => !isFee(it)); const c = {ok: 0, miss: 0, dmg: 0, none: 0}; let val = 0;
   eq.forEach(it => { const s = status(it.k); c[s]++; if (s === "ok") val += it.total; if (s === "miss") val += Math.min(it.qty, Number(state[it.k].r) || 0) * it.unit; });
@@ -425,6 +452,96 @@ $("xlsBtn").onclick = async () => {
 function openImg(it) { $("dlgImg").src = IMG[it.k]; $("dlgImg").alt = it.en; $("dlgAz").textContent = it.az; $("dlgEn").textContent = it.en + " · " + it.part; $("dlg").showModal(); }
 $("dlgClose").onclick = () => $("dlg").close();
 $("dlg").onclick = e => { if (e.target === $("dlg")) $("dlg").close(); };
+// ---- barcode scanner: phone camera (BarcodeDetector, or ZXing where the browser lacks it), manual entry, or a USB/Bluetooth scanner that types + Enter.
+// A code matches a row by its Franke code ("Kod"); codes printed on boxes that differ (EAN etc.) can be linked to a row once and are then remembered for everyone (state[k].bc).
+const ZXING = "zxing.min.js"; // @zxing/library 0.21.3, kept next to the page so the scanner also works offline
+const normCode = s => String(s || "").toUpperCase().replace(/[^0-9A-Z]/g, "");
+let scan = {stream: null, timer: 0, det: null, zx: null, last: "", lastAt: 0, code: ""};
+function findByCode(raw) {
+  const c = normCode(raw); if (!c) return [];
+  const eq = DATA.filter(it => !isFee(it));
+  const linked = eq.filter(it => (state[it.k]?.bc || []).includes(c)); if (linked.length) return linked;
+  const exact = eq.filter(it => normCode(it.part) === c); if (exact.length) return exact;
+  return eq.filter(it => { const p = normCode(it.part); return p.length >= 6 && c.includes(p); });
+}
+function scanBeep(ok) { try { navigator.vibrate?.(ok ? 60 : [40, 60, 40]); const a = new (window.AudioContext || window.webkitAudioContext)(); const o = a.createOscillator(); o.frequency.value = ok ? 1200 : 300; o.connect(a.destination); o.start(); o.stop(a.currentTime + .12); setTimeout(() => a.close(), 300); } catch (e) {} }
+function showInList(it) {
+  $("scanDlg").close();
+  if (!matches(it)) { view = {src: "all", sec: "all", st: "all", q: ""}; $("q").value = ""; [...$("srcSeg").children].forEach(x => x.setAttribute("aria-pressed", x.dataset.v === "all")); fillSec(); renderAll(); }
+  const el = document.querySelector('.item[data-k="' + it.k + '"]');
+  if (el) { el.scrollIntoView({behavior: "smooth", block: "start"}); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1800); }
+}
+function hitEl(it, code, link) {
+  const d = document.createElement("div"); d.className = "scan-hit";
+  const im = document.createElement("img"); im.alt = ""; if (IMG[it.k]) im.src = IMG[it.k]; d.append(im);
+  const tx = document.createElement("div"); const t = document.createElement("div"); t.className = "t"; t.textContent = it.az;
+  const m = document.createElement("div"); m.className = "m"; m.textContent = (it.src === "order" ? "Sifariş" : "Təklif") + " · sətir " + it.line + " · " + it.part + " · " + num(it.qty) + " " + UOM(it.uom) + " · " + ST[status(it.k)].t; tx.append(t, m); d.append(tx);
+  const acts = document.createElement("div"); acts.className = "acts";
+  if (link) { const b = document.createElement("button"); b.className = "tool primary"; b.type = "button"; b.textContent = "Bu kodu bu sətirə bağla"; b.onclick = () => { const bc = [...new Set([...(state[it.k]?.bc || []), normCode(code)])]; patch(it.k, {bc}); toast("Kod yadda saxlanıldı"); scanShow(code); }; acts.append(b); }
+  else {
+    const g = document.createElement("div"); g.className = "st"; const s = status(it.k);
+    [["ok","✓ Gəldi"],["miss","Çatışmır"],["dmg","Zədəli"]].forEach(([v,tt]) => { const b = document.createElement("button"); b.type = "button"; b.dataset.v = v; b.textContent = tt; b.setAttribute("aria-pressed", s === v);
+      b.onclick = () => { setStatus(it, s === v ? "none" : v); if (v === "ok" && s !== v) { toast("✓ " + it.az); scanReset(); } else if (v !== "ok" && s !== v) showInList(it); else scanShow(code); }; g.append(b); });
+    const sh = document.createElement("button"); sh.className = "tool"; sh.type = "button"; sh.textContent = "Siyahıda göstər"; sh.onclick = () => showInList(it);
+    acts.append(g, sh);
+  }
+  d.append(acts); return d;
+}
+function scanShow(code) {
+  scan.code = code; const res = $("scanRes"); res.textContent = "";
+  const cd = document.createElement("div"); cd.className = "scan-code"; cd.textContent = "Oxunan kod: " + code; res.append(cd);
+  const hits = findByCode(code);
+  if (hits.length) { hits.forEach(it => res.append(hitEl(it, code))); return; }
+  const p = document.createElement("p"); p.style.margin = "0"; p.textContent = "Bu kod siyahıda tapılmadı. Qutudakı kod Franke kodundan fərqlidirsə, sətiri axtarıb bu koda bağlayın:"; res.append(p);
+  const inp = document.createElement("input"); inp.type = "search"; inp.placeholder = "Ad, model və ya Franke kodu…"; inp.style.width = "100%"; res.append(inp);
+  const box = document.createElement("div"); box.className = "scan-res"; res.append(box);
+  inp.oninput = () => { box.textContent = ""; const q = inp.value.trim().toLowerCase(); if (q.length < 2) return;
+    DATA.filter(it => !isFee(it) && q.split(/\s+/).every(w => (it.az + " " + it.en + " " + it.part + " " + it.spec).toLowerCase().includes(w))).slice(0, 6).forEach(it => box.append(hitEl(it, code, true))); };
+}
+function scanReset() { scan.code = ""; $("scanRes").textContent = ""; $("scanIn").value = ""; }
+function onCode(raw) {
+  const code = String(raw || "").trim(); if (!code) return;
+  const now = Date.now(); if (code === scan.last && now - scan.lastAt < 2500) return; scan.last = code; scan.lastAt = now;
+  scanBeep(findByCode(code).length > 0); $("scanIn").value = code; scanShow(code);
+}
+async function loadZXing() { if (window.ZXing) return window.ZXing; await new Promise((ok, no) => { const s = document.createElement("script"); s.src = ZXING; s.onload = ok; s.onerror = no; document.head.append(s); }); return window.ZXing; }
+async function scanStart() {
+  scanReset(); $("scanDlg").showModal(); const msg = $("scanMsg"); msg.textContent = "Kamera açılır…";
+  if (!navigator.mediaDevices?.getUserMedia) { msg.textContent = "Bu brauzer kameranı açmır. Kodu aşağıya yazın."; return; }
+  try {
+    scan.stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: {ideal: "environment"}, width: {ideal: 1280}, height: {ideal: 720}}, audio: false});
+    const v = $("scanVid"); v.srcObject = scan.stream; await v.play();
+    const track = scan.stream.getVideoTracks()[0]; const caps = track.getCapabilities?.() || {};
+    $("scanTorch").hidden = !caps.torch; let torch = false; $("scanTorch").onclick = () => { torch = !torch; track.applyConstraints({advanced: [{torch}]}).catch(() => {}); };
+    const fmts = ["ean_13", "ean_8", "code_128", "code_39", "upc_a", "upc_e", "itf", "qr_code", "data_matrix"];
+    if ("BarcodeDetector" in window) { const ok = await BarcodeDetector.getSupportedFormats().catch(() => []); scan.det = new BarcodeDetector({formats: fmts.filter(f => ok.includes(f))}); }
+    else { msg.textContent = "Skaner modulu yüklənir…"; const Z = await loadZXing(); const hints = new Map([[Z.DecodeHintType.TRY_HARDER, true]]); const rd = new Z.MultiFormatReader(); rd.setHints(hints);
+      const cv = document.createElement("canvas"), cx = cv.getContext("2d", {willReadFrequently: true});
+      scan.zx = () => { const k = Math.min(1, 960 / v.videoWidth); cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k); cx.drawImage(v, 0, 0, cv.width, cv.height);
+        try { return rd.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv)))).getText(); } catch (e) { return null; } }; }
+    msg.textContent = "Barkodu çərçivəyə tutun";
+    const tick = async () => { if (!scan.stream) return;
+      try { if (v.readyState >= 2) { if (scan.det) { const r = await scan.det.detect(v); if (r.length) onCode(r[0].rawValue); } else { const t = scan.zx(); if (t) onCode(t); } } } catch (e) {}
+      scan.timer = setTimeout(tick, scan.det ? 250 : 350); };
+    tick();
+  } catch (e) {
+    msg.textContent = e && e.name === "NotAllowedError" ? "Kameraya icazə verilmədi. Brauzer ayarlarından icazə verin və ya kodu yazın." : "Kameranı açmaq olmadı. Kodu aşağıya yazın.";
+  }
+}
+function scanStop() { clearTimeout(scan.timer); scan.zx = null; scan.det = null; scan.stream?.getTracks().forEach(t => t.stop()); scan.stream = null; $("scanVid").srcObject = null; }
+$("scanBtn").onclick = scanStart;
+$("scanClose").onclick = () => $("scanDlg").close();
+$("scanDlg").addEventListener("close", scanStop);
+$("scanGo").onclick = () => { scan.last = ""; onCode($("scanIn").value); };
+$("scanIn").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); scan.last = ""; onCode($("scanIn").value); } };
+// USB/Bluetooth scanners type the code very fast and press Enter: catch that anywhere on the page (not while typing in a field)
+let kb = {s: "", t: 0};
+addEventListener("keydown", e => {
+  if (e.target.closest?.("input, textarea, select") || e.ctrlKey || e.metaKey || e.altKey) return;
+  const now = Date.now(); if (now - kb.t > 80) kb.s = ""; kb.t = now;
+  if (e.key === "Enter") { if (kb.s.length >= 4) { e.preventDefault(); if (!$("scanDlg").open) { scanReset(); $("scanDlg").showModal(); $("scanMsg").textContent = "Skaner cihazından oxundu"; } scan.last = ""; onCode(kb.s); } kb.s = ""; }
+  else if (e.key.length === 1) kb.s += e.key;
+});
 fillSec();
 boot();
 </script>
