@@ -108,7 +108,41 @@ dialog .big img { max-height: 60vh; object-fit: contain }
 dialog .cap { padding: 12px 16px; display: flex; justify-content: space-between; gap: 12px; align-items: start }
 dialog .cap p { margin: 0 }
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 9px 14px; border-radius: 9px; font-size: 13px; z-index: 20 }
+.ids .who { color: var(--fg) }
+.phs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; flex: 1 1 100% }
+.ph { width: 56px; height: 56px; border: 1px solid var(--line); border-radius: 8px; padding: 0; overflow: hidden; background: var(--surface-2); cursor: zoom-in; display: grid; place-items: center }
+.ph img { width: 100%; height: 100%; object-fit: cover }
+.act { display: none }
+@media print {
+  body { background: #fff }
+  body::before, body > *:not(.act) { display: none !important }
+  .act { display: block; color: #000; font: 10pt/1.35 var(--f-body) }
+  @page { size: A4; margin: 14mm 12mm }
+  .act h1 { font: 800 17pt/1.15 var(--f-display); margin: 2px 0 0 }
+  .act h2 { font: 700 12pt var(--f-display); margin: 16px 0 6px; border-bottom: 1.5px solid #000; padding-bottom: 3px }
+  .a-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #000; padding-bottom: 8px; margin-bottom: 10px }
+  .a-k { font: 600 8.5pt var(--f-body); letter-spacing: .08em; text-transform: uppercase }
+  .a-date { text-align: right; font: 10pt var(--f-mono) }
+  .act table { width: 100%; border-collapse: collapse }
+  .act th, .act td { border: 1px solid #999; padding: 3px 5px; text-align: left; vertical-align: top }
+  .act th { background: #eee; font-weight: 600 }
+  .a-meta th { width: 26%; background: #f4f4f4 }
+  .a-sum td { font: 700 13pt var(--f-mono); text-align: center } .a-sum th { text-align: center }
+  .a-tbl { font-size: 8.5pt } .a-tbl tr { break-inside: avoid } .a-tbl thead { display: table-header-group }
+  .a-en { color: #555; font-size: 7.5pt }
+  .a-tbl tr.has-ph td { border-bottom: 0 } .a-phr td { border-top: 0 }
+  .a-phs { display: flex; flex-wrap: wrap; gap: 4px } .a-phs img { height: 42mm; max-width: 60mm; object-fit: cover; border: 1px solid #999 }
+  .a-all { font-size: 7.5pt }
+  .a-note { font-style: italic }
+  .a-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 10px; break-inside: avoid } .a-sign p { margin: 12px 0 0 }
+  .a-break { break-before: page }
+}
+.tools { display: contents }
 @media (max-width: 680px) {
+  .bar .wrap > *, .filters { min-width: 0 }
+  .tools { display: flex; gap: 8px; overflow-x: auto; flex: 1 1 100%; min-width: 0; width: calc(100% + 32px); margin: 0 -16px; padding: 0 16px 2px; scrollbar-width: none }
+  .tools::-webkit-scrollbar { display: none }
+  .tools .tool { flex: none; white-space: nowrap }
   .item { grid-template-columns: 72px minmax(0, 1fr) }
   .thumb { width: 72px; height: 62px }
   .right { grid-column: 1 / -1; justify-items: stretch; min-width: 0; grid-template-columns: 1fr auto; align-items: center }
@@ -177,18 +211,22 @@ dialog .cap p { margin: 0 }
     </div>
     <select id="secSel" aria-label="Bölmə"></select>
     <input type="search" id="q" placeholder="Axtar: ad, kod, model…" aria-label="Axtar">
+    <div class="tools">
     <button class="tool primary" id="scanBtn" type="button">📷 Barkod skan et</button>
     <button class="tool" id="resumeBtn" type="button">Qaldığım yerə keç</button>
     <button class="tool" id="saveBtn" type="button">Yadda saxla</button>
     <button class="tool primary" id="xlsBtn" type="button">Excel-ə yüklə</button>
     <button class="tool" id="copyBtn" type="button">Problemləri kopyala</button>
+    <button class="tool" id="actBtn" type="button">📄 Akt (PDF)</button>
+    <button class="tool" id="whoBtn" type="button">👤</button>
+    </div>
     <span class="saveinfo" id="saveInfo">Yüklənir…</span>
   </div>
 </div></div>
 
 <main class="wrap" id="list"></main>
 
-<dialog id="dlg"><div class="big"><img id="dlgImg" alt=""></div><div class="cap"><div><p id="dlgAz" style="font-weight:600"></p><p id="dlgEn" style="color:var(--muted);font-size:13px"></p></div><button class="tool" id="dlgClose" type="button">Bağla</button></div></dialog>
+<dialog id="dlg"><div class="big"><img id="dlgImg" alt=""></div><div class="cap"><div><p id="dlgAz" style="font-weight:600"></p><p id="dlgEn" style="color:var(--muted);font-size:13px"></p></div><div style="display:flex;gap:6px"><button class="tool" id="dlgDel" type="button" hidden>Sil</button><button class="tool" id="dlgClose" type="button">Bağla</button></div></div></dialog>
 <dialog id="scanDlg" aria-label="Barkod skaneri">
   <div class="scan-cam" id="scanCam"><video id="scanVid" playsinline muted></video><div class="aim"></div><input type="range" id="scanZoom" class="zoom" hidden aria-label="Yaxınlaşdır"><div class="msg" id="scanMsg">Kamera açılır…</div></div>
   <div class="scan-body">
@@ -199,6 +237,8 @@ dialog .cap p { margin: 0 }
     <div class="scan-row"><button class="tool" id="scanTorch" type="button" hidden aria-pressed="false">🔦 İşıq</button><button class="tool" id="scanCamBtn" type="button" hidden>🔄 Kamera</button><span style="flex:1"></span><button class="tool" id="scanClose" type="button">Bağla</button></div>
   </div>
 </dialog>
+<input type="file" id="photoIn" accept="image/*" capture="environment" multiple hidden>
+<section class="act" id="act" aria-hidden="true"></section>
 <div class="toast" id="toast" hidden></div>
 
 <script>/* SheetJS xlsx 0.18.5 mini, inlined so export works offline */
@@ -269,6 +309,7 @@ function itemEl(it) {
   const sp = info.querySelector(".spec"); if (it.spec) sp.textContent = it.spec; else sp.remove();
   const ids = info.querySelector(".ids");
   [["Sətir", it.line], ["Kod", it.part], ["Səh.", it.page]].forEach(([a,b]) => { const x = document.createElement("span"); x.append(a + " "); const bb = document.createElement("b"); bb.textContent = b; x.append(bb); ids.append(x); });
+  const stw = state[it.k] || {}; if (stw.at && (stw.s || stw.n || (stw.ph || []).length)) { const w = document.createElement("span"); w.className = "who"; w.textContent = "👤 " + (stw.by || "naməlum") + " · " + fmtAt(stw.at); ids.append(w); }
   const right = document.createElement("div"); right.className = "right";
   const pr = document.createElement("div"); pr.className = "price";
   pr.innerHTML = '<div class="tot"></div><div class="calc"></div>';
@@ -287,6 +328,7 @@ function itemEl(it) {
     if (s === "miss") { const l = document.createElement("label"); l.append("Gələn say:"); const n = document.createElement("input"); n.type = "number"; n.min = 0; n.max = it.qty; n.step = 1; n.id = "r-" + it.k; n.value = st.r ?? ""; n.placeholder = "0"; n.onchange = () => patch(it.k, {r: n.value === "" ? null : Math.max(0, Math.min(it.qty, Number(n.value)))}); l.append(n, " / " + num(it.qty)); ex.append(l); }
     if (st.n || s === "miss" || s === "dmg" || el._open) { const ta = document.createElement("textarea"); ta.id = "n-" + it.k; ta.rows = 1; ta.placeholder = "Qeyd: nə çatışmır, hansı zədə…"; ta.value = st.n || ""; ta.onchange = () => patch(it.k, {n: ta.value.trim()}); ex.append(ta); }
     else { const nb = document.createElement("button"); nb.className = "notebtn"; nb.type = "button"; nb.textContent = "+ Qeyd əlavə et"; nb.onclick = () => { nb.remove(); const ta = document.createElement("textarea"); ta.id = "n-" + it.k; ta.rows = 1; ta.placeholder = "Qeyd…"; ta.onchange = () => patch(it.k, {n: ta.value.trim()}); ex.append(ta); ta.focus(); }; ex.append(nb); }
+    ex.append(photoStrip(it));
     el.append(ex);
   }
   return el;
@@ -321,6 +363,7 @@ function renderList() {
 function renderAll() { renderStats(); renderList(); }
 
 function patch(k, p) {
+  if (["s", "r", "n", "ph"].some(f => f in p)) p = Object.assign({}, p, {by: askName() || null, at: Date.now()});
   const cur = Object.assign({}, state[k] || {}, p);
   for (const f of Object.keys(cur)) if (cur[f] === null || cur[f] === "" || cur[f] === undefined) delete cur[f];
   if (!cur.s || cur.s === "none") { delete cur.s; }
@@ -385,7 +428,10 @@ async function boot() {
     try { db = fs.initializeFirestore(app.initializeApp(FIREBASE_CONFIG), {localCache: fs.persistentLocalCache()}); }
     catch (e) { db = fs.getFirestore(); }
     const ref = fs.doc(db, "yoxlama", "tarqovu");
-    remote = { save: (k, v) => fs.setDoc(ref, {items: {[k]: v === null ? fs.deleteField() : v}, updatedAt: fs.serverTimestamp()}, {merge: true}) };
+    const phRef = id => fs.doc(db, "yoxlama", "foto_" + id);
+    remote = { save: (k, v) => fs.setDoc(ref, {items: {[k]: v === null ? fs.deleteField() : v}, updatedAt: fs.serverTimestamp()}, {merge: true}),
+      savePhoto: (id, v) => fs.setDoc(phRef(id), v), getPhoto: id => fs.getDoc(phRef(id)).then(s => s.exists() ? s.data() : null), delPhoto: id => fs.deleteDoc(phRef(id)) };
+    uploadPending();
     [...unsent].forEach(send);   // anything marked while the DB was unreachable
     fs.onSnapshot(ref, {includeMetadataChanges: true}, snap => {
       serverPending = snap.metadata.hasPendingWrites;
@@ -440,9 +486,9 @@ $("xlsBtn").onclick = async () => {
     return {"Sənəd": it.src === "order" ? "Sifariş 9152632" : "Təklif 9150395", "Bölmə": SEC_AZ[it.sec] || it.sec, "Sətir": it.line, "Kod": it.part,
       "Ad (AZ)": it.az, "Ad (EN)": it.en, "Xüsusiyyətlər": it.spec, "Miqdar": it.qty, "Vahid": UOM(it.uom),
       "Vahid qiymət (EUR)": it.unit, "Cəmi (EUR)": it.total, "Status": s ? ST_TXT[s] : "Ödəniş (avadanlıq deyil)",
-      "Gələn say": got, "Çatışmayan say": s === "miss" ? Math.max(0, it.qty - (Number(st.r) || 0)) : (s ? 0 : null), "Qeyd": st.n || "", "Barkod": (st.bc || []).join(", ")}; });
+      "Gələn say": got, "Çatışmayan say": s === "miss" ? Math.max(0, it.qty - (Number(st.r) || 0)) : (s ? 0 : null), "Qeyd": st.n || "", "Barkod": (st.bc || []).join(", "), "Foto": (st.ph || []).length || "", "Yoxlayan": st.by || "", "Vaxt": st.at ? fmtAt(st.at) : ""}; });
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws["!cols"] = [16, 22, 7, 14, 42, 38, 50, 8, 10, 14, 14, 22, 10, 13, 40, 18].map(w => ({wch: w}));
+  ws["!cols"] = [16, 22, 7, 14, 42, 38, 50, 8, 10, 14, 14, 22, 10, 13, 40, 18, 6, 16, 13].map(w => ({wch: w}));
   ws["!autofilter"] = {ref: ws["!ref"]};
   const eq = DATA.filter(it => !isFee(it)); const c = {ok: 0, miss: 0, dmg: 0, none: 0}; let val = 0;
   eq.forEach(it => { const s = status(it.k); c[s]++; if (s === "ok") val += it.total; if (s === "miss") val += Math.min(it.qty, Number(state[it.k].r) || 0) * it.unit; });
@@ -469,7 +515,7 @@ $("xlsBtn").onclick = async () => {
   try { await dl.save({filename: fname, data: blob}); toast("Excel faylı yükləndi"); }
   catch (e) { if (e && e.code === "declined") return; toast(e && e.code === "rate_limited" ? "Bir az gözləyib yenidən basın" : "Faylı yükləmək olmadı"); }
 };
-function openImg(it) { $("dlgImg").src = IMG[it.k]; $("dlgImg").alt = it.en; $("dlgAz").textContent = it.az; $("dlgEn").textContent = it.en + " · " + it.part; $("dlg").showModal(); }
+function openImg(it) { $("dlgDel").hidden = true; $("dlgImg").src = IMG[it.k]; $("dlgImg").alt = it.en; $("dlgAz").textContent = it.az; $("dlgEn").textContent = it.en + " · " + it.part; $("dlg").showModal(); }
 $("dlgClose").onclick = () => $("dlg").close();
 $("dlg").onclick = e => { if (e.target === $("dlg")) $("dlg").close(); };
 // ---- barcode scanner: phone camera (BarcodeDetector, or ZXing where the browser lacks it), manual entry, or a USB/Bluetooth scanner that types + Enter.
@@ -642,6 +688,123 @@ addEventListener("keydown", e => {
   if (e.key === "Enter") { if (kb.s.length >= 4) { e.preventDefault(); if (!$("scanDlg").open) { scanReset(); renderHist(); $("scanCount").checked = scanPrefs.count; $("scanDlg").showModal(); $("scanMsg").textContent = "Skaner cihazından oxundu"; } onCode(kb.s); } kb.s = ""; }
   else if (e.key.length === 1) kb.s += e.key;
 });
+// ---- who checked: each phone gives its name once; every status / count / note / photo change records who and when
+const LS_NAME = "tarqovu-name";
+let me = (() => { try { return localStorage.getItem(LS_NAME) || ""; } catch (e) { return ""; } })(), nameAsked = false;
+function askName(force) {
+  if ((me || nameAsked) && !force) return me; nameAsked = true;
+  const n = (prompt("Adınızı yazın: siyahıda kimin yoxladığı görünəcək", me) || "").trim().slice(0, 40);
+  if (n) { me = n; try { localStorage.setItem(LS_NAME, n); } catch (e) {} }
+  renderWho(); return me;
+}
+function renderWho() { $("whoBtn").textContent = "👤 " + (me || "Adınız"); }
+const p2 = n => String(n).padStart(2, "0");
+const fmtAt = t => { const d = new Date(t); return p2(d.getDate()) + "." + p2(d.getMonth() + 1) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes()); };
+$("whoBtn").onclick = () => { askName(true); renderList(); };
+renderWho();
+
+// ---- photos: compressed on the phone, kept in this phone's IndexedDB at once (works offline), then uploaded as their own
+// documents (yoxlama/foto_<id>) so the main checklist document stays small. A row only stores the photo ids (state[k].ph).
+const PDB = (() => { let p; return () => p = p || new Promise((ok, no) => { const r = indexedDB.open("tarqovu-foto", 1); r.onupgradeneeded = () => r.result.createObjectStore("f", {keyPath: "id"}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); })();
+const idb = (mode, fn) => PDB().then(db => new Promise(ok => { const t = db.transaction("f", mode), q = fn(t.objectStore("f")); t.oncomplete = () => ok(q && q.result); t.onerror = t.onabort = () => ok(null); })).catch(() => null);
+const pget = id => idb("readonly", s => s.get(id)), pput = o => idb("readwrite", s => s.put(o)), pdel = id => idb("readwrite", s => s.delete(id)), pall = () => idb("readonly", s => s.getAll());
+const photoCache = new Map();
+async function compressPhoto(file) {
+  let src, w, h;
+  try { src = await createImageBitmap(file, {imageOrientation: "from-image"}); w = src.width; h = src.height; }
+  catch (e) { src = new Image(); src.src = URL.createObjectURL(file); await src.decode(); w = src.naturalWidth; h = src.naturalHeight; }
+  const k = Math.min(1, 1400 / Math.max(w, h)), c = document.createElement("canvas"); c.width = Math.round(w * k); c.height = Math.round(h * k);
+  c.getContext("2d").drawImage(src, 0, 0, c.width, c.height);
+  let q = .75, d = c.toDataURL("image/jpeg", q); while (d.length > 650000 && q > .3) { q -= .1; d = c.toDataURL("image/jpeg", q); }
+  return d;
+}
+async function uploadPhoto(id) {
+  if (!remote) return; const o = await pget(id); if (!o || o.sent) return;
+  try { await remote.savePhoto(id, {k: o.k, data: o.data, by: o.by || "", at: o.at}); o.sent = true; await pput(o); } catch (e) {}
+}
+async function uploadPending() { const all = await pall(); (all || []).filter(o => !o.sent && !o.gone).forEach(o => uploadPhoto(o.id)); }
+async function loadPhoto(id) {
+  if (photoCache.has(id)) return photoCache.get(id);
+  let d = (await pget(id))?.data;
+  if (!d && remote) { const r = await remote.getPhoto(id).catch(() => null); if (r) { d = r.data; pput({id, ...r, sent: true}); } }
+  if (d) photoCache.set(id, d); return d || null;
+}
+let photoFor = null;
+function pickPhoto(it) { photoFor = it; askName(); $("photoIn").value = ""; $("photoIn").click(); }
+$("photoIn").onchange = async e => {
+  const it = photoFor, files = [...e.target.files]; if (!it || !files.length) return;
+  toast("Foto hazırlanır…");
+  const ids = [];
+  for (const f of files) {
+    try { const data = await compressPhoto(f); const id = it.k + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      await pput({id, k: it.k, data, by: me, at: Date.now(), sent: false}); photoCache.set(id, data); ids.push(id); }
+    catch (x) { toast("Şəkli oxumaq olmadı"); }
+  }
+  if (!ids.length) return;
+  patch(it.k, {ph: [...(state[it.k]?.ph || []), ...ids]}); refreshRow(it); ids.forEach(uploadPhoto);
+  toast(ids.length === 1 ? "Foto əlavə olundu" : ids.length + " foto əlavə olundu");
+};
+function photoStrip(it) {
+  const st = state[it.k] || {}, box = document.createElement("div"); box.className = "phs";
+  (st.ph || []).forEach(id => { const b = document.createElement("button"); b.type = "button"; b.className = "ph"; b.setAttribute("aria-label", "Fotoya bax");
+    loadPhoto(id).then(d => { if (d) { const im = document.createElement("img"); im.src = d; im.alt = ""; b.append(im); } else b.textContent = "⏳"; });
+    b.onclick = () => openPhoto(it, id); box.append(b); });
+  const add = document.createElement("button"); add.type = "button"; add.className = "notebtn"; add.textContent = (st.ph || []).length ? "+ Foto" : "📷 Foto əlavə et"; add.onclick = () => pickPhoto(it);
+  box.append(add); return box;
+}
+function openPhoto(it, id) {
+  loadPhoto(id).then(d => { if (!d) { toast("Foto hələ yüklənməyib (internet lazımdır)"); return; }
+    $("dlgImg").src = d; $("dlgAz").textContent = it.az; $("dlgEn").textContent = "Sətir " + it.line + " · " + it.part; $("dlgDel").hidden = false;
+    $("dlgDel").onclick = () => { if (!confirm("Bu foto silinsin?")) return; patch(it.k, {ph: (state[it.k]?.ph || []).filter(x => x !== id)}); pdel(id); photoCache.delete(id); remote?.delPhoto(id).catch(() => {}); $("dlg").close(); refreshRow(it); toast("Foto silindi"); };
+    $("dlg").showModal(); });
+}
+$("dlg").addEventListener("close", () => { $("dlgDel").hidden = true; });
+addEventListener("online", uploadPending);
+
+// ---- acceptance act: a printable A4 document (save as PDF from the print dialog) with summary, problems + photos, signatures and all rows
+$("actBtn").onclick = async () => {
+  const a = $("act"); const eq = DATA.filter(it => !isFee(it)); const c = {ok: 0, miss: 0, dmg: 0, none: 0}; let val = 0, total = 0;
+  eq.forEach(it => { const s = status(it.k); c[s]++; total += it.total; if (s === "ok") val += it.total; if (s === "miss") val += Math.min(it.qty, Number(state[it.k].r) || 0) * it.unit; });
+  const now = new Date(), d2 = n => String(n).padStart(2, "0"), no = "TQ-" + now.getFullYear() + d2(now.getMonth() + 1) + d2(now.getDate());
+  const who = [...new Set(eq.map(it => state[it.k]?.by).filter(Boolean))];
+  const prob = eq.filter(it => ["miss", "dmg"].includes(status(it.k)));
+  const docName = it => (it.src === "order" ? "Sif. 9152632" : "Təkl. 9150395") + " / " + it.line;
+  const got = it => { const s = status(it.k); return s === "ok" || s === "dmg" ? it.qty : s === "miss" ? (Number(state[it.k].r) || 0) : "—"; };
+  const E = s => String(s ?? "").replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[ch]));
+  toast("Akt hazırlanır…");
+  const photos = {}; for (const it of prob) photos[it.k] = (await Promise.all((state[it.k]?.ph || []).map(loadPhoto))).filter(Boolean);
+  const missingPh = prob.reduce((n, it) => n + (state[it.k]?.ph || []).length - photos[it.k].length, 0);
+  a.innerHTML = `
+  <div class="a-head"><div><div class="a-k">Popeyes · Tarqovu filialı</div><h1>Qəbul-təhvil aktı № ${no}</h1></div><div class="a-date">${d2(now.getDate())}.${d2(now.getMonth() + 1)}.${now.getFullYear()}<br>${E(hhmm())}</div></div>
+  <table class="a-meta">
+    <tr><th>Obyekt</th><td>Popeyes, Tarqovu filialı, Bakı, Nizami küç. 62A</td></tr>
+    <tr><th>Təchizatçı</th><td>Franke, layihə 693107</td></tr>
+    <tr><th>Əsas sənədlər</th><td>Sifariş təsdiqi 9152632 (14.07.2026), qiymət təklifi 9150395 (26.05.2026)</td></tr>
+    <tr><th>Yoxlayanlar</th><td>${E(who.join(", ") || "—")}</td></tr>
+  </table>
+  <h2>1. Yekun</h2>
+  <table class="a-sum"><tr><th>Avadanlıq sətri</th><th>Tam gəldi</th><th>Çatışmır</th><th>Zədəli</th><th>Yoxlanmayıb</th></tr>
+    <tr><td>${eq.length}</td><td>${c.ok}</td><td>${c.miss}</td><td>${c.dmg}</td><td>${c.none}</td></tr></table>
+  <p>Avadanlığın ümumi dəyəri <b>${money(total)}</b>, bunun <b>${money(val)}</b> qədəri tam və zədəsiz qəbul edilmişdir (ƏDV və ödənişlər daxil deyil).</p>
+  <h2>2. Çatışmayan və zədəli mallar</h2>
+  ${prob.length ? `<table class="a-tbl"><thead><tr><th>№</th><th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Sifariş</th><th>Gəlib</th><th>Status</th><th>Qeyd</th><th>Yoxlayan</th></tr></thead><tbody>
+    ${prob.map((it, i) => { const st = state[it.k] || {}; return `<tr class="${photos[it.k].length ? "has-ph" : ""}"><td>${i + 1}</td><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}<div class="a-en">${E(it.en)}</div></td><td>${num(it.qty)} ${UOM(it.uom)}</td><td>${got(it)}</td><td><b>${ST[status(it.k)].t}</b></td><td>${E(st.n || "")}</td><td>${E(st.by || "")}${st.at ? "<br>" + fmtAt(st.at) : ""}</td></tr>
+      ${photos[it.k].length ? `<tr class="a-phr"><td></td><td colspan="8"><div class="a-phs">${photos[it.k].map(d => `<img src="${d}" alt="">`).join("")}</div></td></tr>` : ""}`; }).join("")}
+  </tbody></table>${missingPh ? `<p class="a-note">${missingPh} foto bu telefona hələ yüklənməyib.</p>` : ""}` : "<p>Çatışmayan və ya zədəli mal qeyd olunmayıb.</p>"}
+  ${c.none ? `<p class="a-note">Diqqət: ${c.none} sətir hələ yoxlanmayıb (siyahı əlavədədir).</p>` : ""}
+  <h2>3. İmzalar</h2>
+  <p>Yuxarıda göstərilən avadanlıq qeyd olunan qüsur və çatışmazlıqlarla təhvil verilmiş və qəbul edilmişdir. Çatışmayan və zədəli mallar üzrə iddia hüququ saxlanılır.</p>
+  <div class="a-sign">
+    <div><b>Təhvil verdi</b> (təchizatçı / daşıyıcı)<p>Ad, soyad: ____________________</p><p>Vəzifə: ______________________</p><p>İmza: ________  Tarix: ________</p></div>
+    <div><b>Qəbul etdi</b> (Popeyes, Tarqovu)<p>Ad, soyad: ____________________</p><p>Vəzifə: ______________________</p><p>İmza: ________  Tarix: ________</p></div>
+  </div>
+  <h2 class="a-break">Əlavə: bütün sətirlər</h2>
+  <table class="a-tbl a-all"><thead><tr><th>Sənəd / sətir</th><th>Kod</th><th>Ad</th><th>Sifariş</th><th>Gəlib</th><th>Status</th><th>Yoxlayan</th></tr></thead><tbody>
+    ${eq.map(it => { const st = state[it.k] || {}; return `<tr><td>${docName(it)}</td><td>${E(it.part)}</td><td>${E(it.az)}</td><td>${num(it.qty)}</td><td>${got(it)}</td><td>${ST[status(it.k)].t}</td><td>${E(st.by || "")}</td></tr>`; }).join("")}
+  </tbody></table>`;
+  await Promise.all([...a.querySelectorAll("img")].map(i => i.decode().catch(() => {})));
+  window.print();
+};
 fillSec();
 boot();
 </script>
