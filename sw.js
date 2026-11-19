@@ -1,5 +1,5 @@
 // Offline support: the page itself is fetched network-first (so updates arrive), the pinned Firebase SDK cache-first.
-const CACHE = "tarqovu-v10";
+const CACHE = "tarqovu-v11";
 const SDK = /^https:\/\/www\.gstatic\.com\/firebasejs\/10\.14\.1\//;
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(["./", "zxing.min.js", "jspdf.min.js", "html2canvas.min.js", "sections.js", "catalog.js", "exceljs.min.js", "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js", "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js"]).catch(() => c.add("./")))); self.skipWaiting(); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

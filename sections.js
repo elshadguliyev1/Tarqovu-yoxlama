@@ -42,13 +42,7 @@ const azn = v => { const s = Math.abs(v).toFixed(2).split("."); return (v < 0 ? 
 const today = () => { const d = new Date(), p = n => String(n).padStart(2, "0"); return p(d.getDate()) + "." + p(d.getMonth() + 1) + "." + d.getFullYear(); };
 const equipment = () => DATA.filter(it => !isFee(it));
 // hand a finished file to the person: share sheet on phones, a download elsewhere
-async function deliverFile(blob, name) {
-  const file = new File([blob], name, { type: blob.type });
-  if (navigator.canShare && navigator.canShare({ files: [file] }) && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)) {
-    try { await navigator.share({ files: [file], title: name }); return; } catch (e) { if (e.name === "AbortError") return; }
-  }
-  const u = URL.createObjectURL(blob), a = document.createElement("a"); a.href = u; a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000); toast("Fayl yükləndi");
-}
+async function deliverFile(blob, name) { offerFile(blob, name); } // share / download / open, each from a fresh tap (index.html)
 
 // a small form in the page's own dialog (prompt() is blocked in home-screen apps and in WhatsApp/Telegram browsers)
 function formDialog(title, fields) {
@@ -328,13 +322,18 @@ function orderLines(sup) {
   for (const k of orderSummary(sup).keys) { const p = productByKey(k), r = O.data[k]; if (!p) continue; out.push({ p, lines: r.lines.filter(l => Number(l.q) > 0), note: r.note || "", q: lineQty(r) }); }
   return out;
 }
+// pictures go into Excel as white squares with the photo centred, so a square cell never stretches them
+function squareImg(src, size = 240) {
+  return new Promise(ok => { const im = new Image(); im.onload = () => { const c = document.createElement("canvas"); c.width = c.height = size; const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, size, size);
+    const k = Math.min((size - 16) / im.width, (size - 16) / im.height), w = im.width * k, h = im.height * k; x.drawImage(im, (size - w) / 2, (size - h) / 2, w, h); ok(c.toDataURL("image/jpeg", .88)); }; im.onerror = () => ok(null); im.src = src; });
+}
 async function orderExcel() {
   const sup = oview.sup, S = SUPPLIERS[sup], m = O.data["_meta:" + sup] || {}, L = orderLines(sup); if (!L.length) return;
   const btn = $("oXls"); btn.disabled = true; btn.textContent = "Hazırlanır…";
   try {
     await loadScript("exceljs.min.js");
     const wb = new ExcelJS.Workbook(); wb.creator = "Tarqovu"; const ws = wb.addWorksheet("Sifariş", { pageSetup: { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
-    ws.columns = [{ width: 5 }, { width: 14 }, { width: 44 }, { width: 13 }, { width: 16 }, { width: 8 }, { width: 13 }, { width: 14 }, { width: 28 }];
+    ws.columns = [{ width: 5 }, { width: 14.5 }, { width: 44 }, { width: 13 }, { width: 16 }, { width: 8 }, { width: 13 }, { width: 14 }, { width: 28 }];
     const gold = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8590C" } }, thin = { style: "thin", color: { argb: "FFBBBBBB" } }, border = { top: thin, left: thin, bottom: thin, right: thin };
     ws.mergeCells("A1:I1"); ws.getCell("A1").value = "Sifariş: " + S.t; ws.getCell("A1").font = { size: 16, bold: true };
     const info = [["Sifariş №", m.no || "—"], ["Tarix", today()], ["Sifariş verən", m.who || me || "—"], ["Çatdırılma ünvanı", m.addr || "Popeyes, Tarqovu filialı, Bakı, Nizami küç. 62A"], ["Təchizatçı", S.t + " · " + S.sub], ["Qeyd", m.note || ""]];
@@ -342,19 +341,21 @@ async function orderExcel() {
     const hr = ws.getRow(9); ["№", "Şəkil", "Məhsul", "Kod", "Rəng", "Say", "Vahid qiymət", "Cəmi", "Qeyd"].forEach((h, i) => { const c = hr.getCell(i + 1); c.value = h; c.font = { bold: true, color: { argb: "FFFFFFFF" } }; c.fill = gold; c.border = border; c.alignment = { vertical: "middle", horizontal: "center" }; });
     hr.height = 22;
     let r = 10, total = 0;
+    const pics = await Promise.all(L.map(x => x.p.img ? squareImg(x.p.img) : null));
     L.forEach((x, i) => {
       const start = r, cur = sup === "az" ? '#,##0.00 "₼"' : '#,##0.00 "€"';
       for (const l of x.lines) {
-        const row = ws.getRow(r); row.height = Math.max(30, 64 / x.lines.length + 8);
+        const row = ws.getRow(r); row.height = Math.max(30, 78 / x.lines.length + 6);
         row.getCell(5).value = l.c || "Standart"; row.getCell(6).value = Number(l.q); row.getCell(7).value = x.p.price || 0; row.getCell(8).value = { formula: `F${r}*G${r}`, result: (x.p.price || 0) * l.q };
         row.getCell(7).numFmt = cur; row.getCell(8).numFmt = cur; total += (x.p.price || 0) * l.q; r++;
       }
       const end = r - 1;
       for (const col of [1, 2, 3, 4, 9]) if (end > start) ws.mergeCells(start, col, end, col);
       ws.getCell(start, 1).value = i + 1; ws.getCell(start, 3).value = x.p.t + (x.p.sub ? "\n" + x.p.sub : ""); ws.getCell(start, 4).value = x.p.code; ws.getCell(start, 9).value = x.note;
-      if (end - start + 1 < 2) ws.getRow(start).height = 64;
+      if (end - start + 1 < 2) ws.getRow(start).height = 78;
       for (let rr = start; rr <= end; rr++) for (let cc = 1; cc <= 9; cc++) { const c = ws.getCell(rr, cc); c.border = border; c.alignment = { vertical: "middle", wrapText: true, horizontal: cc === 3 || cc === 9 ? "left" : "center" }; }
-      if (x.p.img) { const ext = /^data:image\/png/.test(x.p.img) ? "png" : "jpeg"; const id = wb.addImage({ base64: x.p.img, extension: ext }); ws.addImage(id, { tl: { col: 1.08, row: start - 1 + .08 }, ext: { width: 84, height: 76 }, editAs: "oneCell" }); }
+      // anchored to both corners of the (merged) picture cell: phone viewers and Google Sheets show these too
+      if (pics[i]) { const id = wb.addImage({ base64: pics[i], extension: "jpeg" }); ws.addImage(id, { tl: { col: 1, row: start - 1 }, br: { col: 2, row: end }, editAs: "oneCell" }); }
     });
     const tr = ws.getRow(r); tr.getCell(5).value = "Cəmi"; tr.getCell(6).value = { formula: `SUM(F10:F${r - 1})`, result: L.reduce((a, x) => a + x.q, 0) }; tr.getCell(8).value = { formula: `SUM(H10:H${r - 1})`, result: total };
     tr.getCell(8).numFmt = sup === "az" ? '#,##0.00 "₼"' : '#,##0.00 "€"'; [5, 6, 8].forEach(c => { tr.getCell(c).font = { bold: true }; tr.getCell(c).border = border; });
