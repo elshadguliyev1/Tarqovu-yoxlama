@@ -421,6 +421,7 @@ function drawRota() {
     <div class="card rcfg"><h3>👥 İşçilər</h3>
       <div class="rnames">${[...cfg.names, ...Array(Math.max(0, 4 - cfg.names.length)).fill("")].map((n, i) => `<input data-n="${i}" value="${esc2(n)}" placeholder="${i + 1}-ci işçinin adı" autocomplete="off">`).join("")}</div>
       <div class="rtime"><label>Növbə başlayır <input type="time" id="rStart" value="${esc2(cfg.start)}"></label><label>bitir <input type="time" id="rEnd" value="${esc2(cfg.end)}"></label><button class="tool" id="rAdd" type="button">+ İşçi</button></div>
+      <div class="rsign"><label>Tərtib edən <input id="rBy" value="${esc2(cfg.by ?? me ?? "")}" placeholder="Ad, soyad, vəzifə" autocomplete="off"></label><label>Təsdiq edən <input id="rOk" value="${esc2(cfg.ok || "")}" placeholder="Məs.: Restoran müdiri Aysel Məmmədova" autocomplete="off"></label></div>
       <p class="muted small">Adlar və saatlar hamı üçün ortaq saxlanılır. Bölgü fasiləsiz növbə ilə gedir: hər həftə əvvəlkinin davamıdır, ona görə uzun müddətdə hər kəs bərabər növbə alır və heç kim iki gecə ardıcıl işləmir.</p></div>
     <div class="rweek"><button class="tool" id="rPrev" type="button">←</button><div><b>${dmy(rotaMonday)} – ${dmy(sunday)}</b><br><button class="notebtn" id="rNow" type="button">Bu həftə</button></div><button class="tool" id="rNext" type="button">→</button></div>
     ${names.length ? `<div class="rtable">${wk.map(d => `<div class="rrow${isoDay(d.date) === today ? " now" : ""}"><div class="rday"><b>${WD[d.i]}</b><span>${dmy(d.date)} ${esc2(cfg.start)} → ${dm(d.next)} ${esc2(cfg.end)}</span></div>
@@ -433,6 +434,8 @@ function drawRota() {
   box.querySelectorAll("[data-n]").forEach(inp => inp.onchange = () => { const list = [...box.querySelectorAll("[data-n]")].map(x => x.value.trim()); while (list.length > 1 && !list[list.length - 1]) list.pop(); saveCfg({ names: list }); renderRota(); });
   $("rStart").onchange = e => { saveCfg({ start: e.target.value || "23:00" }); renderRota(); };
   $("rEnd").onchange = e => { saveCfg({ end: e.target.value || "07:30" }); renderRota(); };
+  $("rBy").onchange = e => { saveCfg({ by: e.target.value.trim() }); toast("PDF-də “Tərtib etdi”: " + (e.target.value.trim() || "boş xətt")); };
+  $("rOk").onchange = e => { saveCfg({ ok: e.target.value.trim() }); toast("PDF-də “Təsdiq etdi”: " + (e.target.value.trim() || "boş xətt")); };
   $("rAdd").onclick = () => { saveCfg({ names: [...[...box.querySelectorAll("[data-n]")].map(x => x.value.trim()), ""] }); renderRota(); setTimeout(() => { const ins = box.querySelectorAll("[data-n]"); ins[ins.length - 1].focus(); }, 50); };
   $("rPrev").onclick = () => { rotaMonday = new Date(rotaMonday.getTime() - 7 * DAY); renderRota(); };
   $("rNext").onclick = () => { rotaMonday = new Date(rotaMonday.getTime() + 7 * DAY); renderRota(); };
@@ -469,7 +472,7 @@ async function rotaPdf(weeks) {
       rows: wk.map(d => `<tr><td><b>${WD[d.i]}</b><br>${dmy(d.date)}</td><td>${dm(d.date)} ${esc2(cfg.start)} → ${dm(d.next)} ${esc2(cfg.end)}</td><td style="font-size:13px"><b>${esc2(d.who)}</b>${d.manual ? " ✋" : ""}</td><td></td></tr>`) });
   }
   B.push({ html: `<h2>Yekun</h2><table class="a-sum"><tr>${Object.keys(all).map(n => `<th>${esc2(n)}</th>`).join("")}</tr><tr>${Object.values(all).map(c => `<td>${c}</td>`).join("")}</tr></table><p class="a-note">Gecə sayı. ✋: əl ilə dəyişdirilmiş növbə.</p>
-    <div class="a-sign" style="margin-top:24px"><div><b>Tərtib etdi</b><p>${esc2(me || "____________________")}</p><p>İmza: __________</p></div><div><b>Təsdiq etdi</b> (restoran müdiri)<p>Ad, soyad: ____________________</p><p>İmza: __________</p></div></div>` });
+    <div class="a-sign" style="margin-top:24px"><div><b>Tərtib etdi</b><p>${esc2((cfg.by ?? me) || "Ad, soyad: ____________________")}</p><p>İmza: __________</p></div><div><b>Təsdiq etdi</b><p>${esc2(cfg.ok || "Ad, soyad: ____________________")}</p><p>İmza: __________</p></div></div>` });
   paginate(B, no); showActView("Gecə növbəsi cədvəli");
 }
 function rotaExcel() {
