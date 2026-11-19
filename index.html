@@ -965,33 +965,47 @@ $("avBack").onclick = closeActView;
 // A finished file is offered with buttons: phones open the share sheet only right after a tap, and building a PDF or an
 // Excel file takes a few seconds, so the share has to start from a fresh tap. "Aç" shows it in the browser's own viewer
 // (works even where downloads don't, e.g. a home-screen app), and that viewer has its own share button.
-function offerFile(blob, name) {
+function offerFile(blob, name, hint) {
   const file = new File([blob], name, {type: blob.type}), url = URL.createObjectURL(blob);
   const canShare = !!(navigator.canShare && navigator.canShare({files: [file]}));
   const d = document.createElement("dialog"); d.className = "fdlg";
   d.innerHTML = `<form method="dialog"><b class="fdt">Fayl hazırdır</b><span class="fdn"></span><div class="fdb" style="flex-wrap:wrap">${canShare ? '<button class="tool primary" type="button" data-a="share">📤 Göndər</button>' : ""}<a class="tool${canShare ? "" : " primary"}" data-a="dl" style="text-decoration:none">⬇️ Yüklə</a><a class="tool" data-a="open" target="_blank" rel="noopener" style="text-decoration:none">👁️ Aç</a><button class="tool" value="x">Bağla</button></div></form>`;
-  d.querySelector(".fdn").textContent = name;
+  d.querySelector(".fdn").textContent = name + (hint ? " · " + hint : "");
   const dl = d.querySelector('[data-a="dl"]'); dl.href = url; dl.download = name; d.querySelector('[data-a="open"]').href = url;
   const sh = d.querySelector('[data-a="share"]');
   if (sh) sh.onclick = async () => { try { await navigator.share({files: [file], title: name}); d.close(); } catch (e) { if (e.name !== "AbortError") toast("Göndərmək olmadı: “Yüklə” və ya “Aç” düyməsini istifadə edin"); } };
   d.addEventListener("close", () => { d.remove(); setTimeout(() => URL.revokeObjectURL(url), 120000); });
   document.body.append(d); d.showModal();
 }
-$("avPrint").onclick = () => { try { window.print(); } catch (e) { toast("Bu brauzer çap etmir: PDF düyməsini istifadə edin"); } };
-$("avPdf").onclick = async () => {
-  const btn = $("avPdf"); if (btn.disabled) return; btn.disabled = true; const old = btn.textContent; btn.textContent = "Hazırlanır…";
+// a modal "working…" box with progress, which turns into an error box that stays (so the message can be read and sent)
+function busyBox(text) {
+  const d = document.createElement("dialog"); d.className = "fdlg"; d.innerHTML = '<form method="dialog"><b class="fdt"></b><span class="fdn"></span><div class="fdb" hidden><button class="tool" value="x">Bağla</button></div></form>';
+  d.querySelector(".fdt").textContent = text; document.body.append(d); d.showModal(); d.addEventListener("cancel", e => { if (!d.dataset.err) e.preventDefault(); });
+  return { step: t => { d.querySelector(".fdn").textContent = t; }, done: () => { d.close(); d.remove(); },
+    fail: msg => { d.dataset.err = 1; d.querySelector(".fdt").textContent = "Alınmadı"; d.querySelector(".fdn").textContent = msg; d.querySelector(".fdb").hidden = false; d.addEventListener("close", () => d.remove()); } };
+}
+async function buildPdf() {
+  const box = busyBox("PDF hazırlanır…");
   try {
+    box.step("Modul yüklənir…");
     await loadScript("html2canvas.min.js"); await loadScript("jspdf.min.js");
+    if (!window.html2canvas || !window.jspdf) throw new Error("PDF modulu yüklənmədi (internet?)");
     const pages = [...$("actSrc").children], pdf = new window.jspdf.jsPDF({unit: "mm", format: "a4", compress: true});
     for (let i = 0; i < pages.length; i++) {
-      btn.textContent = "Səhifə " + (i + 1) + " / " + pages.length;
-      const cv = await html2canvas(pages[i], {scale: 1.75, backgroundColor: "#ffffff", logging: false, useCORS: true});
+      box.step("Səhifə " + (i + 1) + " / " + pages.length);
+      const cv = await html2canvas(pages[i], {scale: 1.6, backgroundColor: "#ffffff", logging: false, useCORS: true});
       if (i) pdf.addPage(); pdf.addImage(cv.toDataURL("image/jpeg", .82), "JPEG", 0, 0, 210, 297);
     }
-    offerFile(pdf.output("blob"), actPdfName);
-  } catch (e) { toast("PDF hazırlamaq olmadı: " + (e && e.message || e)); }
-  btn.disabled = false; btn.textContent = old;
+    const blob = pdf.output("blob"); box.done(); return blob;
+  } catch (e) { box.fail("PDF hazırlamaq olmadı: " + (e && (e.message || e.name) || e) + ". Bu mesajın şəklini göndərin."); return null; }
+}
+const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+// printing from a phone (or a home-screen app) goes through the PDF: open it, then print from the viewer's share menu
+$("avPrint").onclick = async () => {
+  if (!isMobile) { try { window.print(); return; } catch (e) {} }
+  const blob = await buildPdf(); if (blob) offerFile(blob, actPdfName, "Çap üçün: “👁️ Aç” basın, açılan PDF-də paylaşma düyməsi → “Çap et”.");
 };
+$("avPdf").onclick = async () => { const blob = await buildPdf(); if (blob) offerFile(blob, actPdfName); };
 fillSec();
 boot();
 </script>
