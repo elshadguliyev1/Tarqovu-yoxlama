@@ -169,8 +169,18 @@ body.av-open { overflow: hidden }
 .mainnav button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 99px; padding: 9px 14px; font: 600 14px var(--f-body); cursor: pointer; white-space: nowrap }
 .mainnav button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
 .view { display: none }
-body[data-view="tehvil"] .bar, body[data-view="tehvil"] #list, body[data-view="sifaris"] .bar, body[data-view="sifaris"] #list { display: none }
-body[data-view="tehvil"] #tehvilView, body[data-view="sifaris"] #orderView { display: block; padding-bottom: 60px }
+body[data-view="tehvil"] .bar, body[data-view="tehvil"] #list, body[data-view="sifaris"] .bar, body[data-view="sifaris"] #list, body[data-view="novbe"] .bar, body[data-view="novbe"] #list { display: none }
+body[data-view="tehvil"] #tehvilView, body[data-view="sifaris"] #orderView, body[data-view="novbe"] #rotaView { display: block; padding-bottom: 60px }
+.card.rcfg { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin: 6px 0 14px } .rcfg h3 { margin: 0 0 10px; font: 700 16px var(--f-display) }
+.rnames { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px }
+.rnames input, .rtime input, .rrow select { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 9px; padding: 9px 10px; font: 15px var(--f-body); min-width: 0 }
+.rtime { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 10px; font-size: 13px; color: var(--muted) } .rtime label { display: inline-flex; gap: 6px; align-items: center }
+.rweek { display: flex; align-items: center; justify-content: space-between; gap: 10px; text-align: center; margin-bottom: 10px; font-size: 15px } .rweek .tool { min-width: 52px; font-size: 18px }
+.rtable { display: grid; gap: 6px }
+.rrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 42%) 22px; gap: 8px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px }
+.rrow.now { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 50%, var(--surface)) }
+.rday b { display: block; font-size: 14.5px } .rday span { font: 12px var(--f-mono); color: var(--muted) } .rrow select { width: 100%; font-weight: 600 } .rman { text-align: center }
+.rcount { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13.5px; margin: 12px 2px } .rtools { display: flex; flex-wrap: wrap; gap: 8px }
 .sbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); margin-bottom: 14px }
 .sbar .wrap { padding-block: 12px; display: grid; gap: 10px }
 .sbar .wrap > *, .sbar .filters { min-width: 0 }
@@ -244,7 +254,7 @@ body[data-view="tehvil"] #tehvilView, body[data-view="sifaris"] #orderView { dis
   <div class="eyebrow">Popeyes · Tarqovu filialı · Nizami küç. 62A</div>
   <h1 id="pageTitle">Tarqovu avadanlıq yoxlaması</h1>
   <p class="sub" id="pageSub">Franke layihəsi 693107. <b>Sifariş 9152632</b> (14.07.2026, gəliş 12.10.2026) və <b>Təklif 9150395</b> (26.05.2026). Hər sətri yoxlayıb statusunu qeyd edin.</p>
-  <nav class="mainnav" id="mainNav" aria-label="Bölmələr"><button type="button" data-s="qebul" aria-pressed="true">📦 Franke qəbul</button><button type="button" data-s="tehvil" aria-pressed="false">🏪 Restoran təhvili</button><button type="button" data-s="sifaris" aria-pressed="false">🧾 Sifariş</button></nav>
+  <nav class="mainnav" id="mainNav" aria-label="Bölmələr"><button type="button" data-s="qebul" aria-pressed="true">📦 Franke qəbul</button><button type="button" data-s="tehvil" aria-pressed="false">🏪 Restoran təhvili</button><button type="button" data-s="sifaris" aria-pressed="false">🧾 Sifariş</button><button type="button" data-s="novbe" aria-pressed="false">🗓️ Növbə</button></nav>
   <div id="storeNote" class="note-banner" hidden></div>
 </header>
 
@@ -280,6 +290,7 @@ body[data-view="tehvil"] #tehvilView, body[data-view="sifaris"] #orderView { dis
 <main class="wrap" id="list"></main>
 <section id="tehvilView" class="view"></section>
 <section id="orderView" class="view"></section>
+<section id="rotaView" class="view"></section>
 
 <dialog id="dlg"><div class="big"><img id="dlgImg" alt=""></div><div class="cap"><div><p id="dlgAz" style="font-weight:600"></p><p id="dlgEn" style="color:var(--muted);font-size:13px"></p></div><div style="display:flex;gap:6px"><button class="tool" id="dlgDel" type="button" hidden>Sil</button><button class="tool" id="dlgClose" type="button">Bağla</button></div></div></dialog>
 <dialog id="scanDlg" aria-label="Barkod skaneri">

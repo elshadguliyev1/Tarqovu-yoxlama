@@ -58,20 +58,22 @@ function formDialog(title, fields) {
 }
 
 // ---------- section switch ----------
-const SECTIONS = { qebul: "📦 Franke qəbul", tehvil: "🏪 Restoran təhvili", sifaris: "🧾 Sifariş" };
+const SECTIONS = { qebul: "📦 Franke qəbul", tehvil: "🏪 Restoran təhvili", sifaris: "🧾 Sifariş", novbe: "🗓️ Növbə" };
 let section = (() => { try { return localStorage.getItem("tarqovu-section") || "qebul"; } catch (e) { return "qebul"; } })();
 function showSection(s) {
   section = SECTIONS[s] ? s : "qebul"; document.body.dataset.view = section;
   try { localStorage.setItem("tarqovu-section", section); } catch (e) {}
   [...$("mainNav").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.s === section));
-  $("pageTitle").textContent = { qebul: "Franke avadanlığının qəbulu", tehvil: "Restoranın təhvil sayımı", sifaris: "Sifariş" }[section];
+  $("pageTitle").textContent = { qebul: "Franke avadanlığının qəbulu", tehvil: "Restoranın təhvil sayımı", sifaris: "Sifariş", novbe: "Gecə növbəsi cədvəli" }[section];
   $("pageSub").innerHTML = {
     qebul: "Franke layihəsi 693107. <b>Sifariş 9152632</b> və <b>Təklif 9150395</b>. Hər sətri yoxlayıb statusunu qeyd edin.",
     tehvil: "Franke-dən qəbul edilmiş avadanlıq restorana təhvil verilərkən yerində sayılır. Say, vəziyyət və qeyd yazın, sonda təhvil-təslim aktı çıxarın.",
-    sifaris: "AzTürk kataloqundan və ya Franke siyahısından məhsul seçin, hər rəngdən neçə ədəd lazım olduğunu yazın, Excel və ya PDF kimi göndərin."
+    sifaris: "AzTürk kataloqundan və ya Franke siyahısından məhsul seçin, hər rəngdən neçə ədəd lazım olduğunu yazın, Excel və ya PDF kimi göndərin.",
+    novbe: "İşçilərin adlarını yazın: həftəlik gecə növbəsi özü bölünür, hər gecəyə bir nəfər. İstənilən günü əl ilə dəyişmək olar."
   }[section];
   if (section === "tehvil") renderTehvil();
   if (section === "sifaris") renderOrder();
+  if (section === "novbe") renderRota();
   scrollTo({ top: 0 });
 }
 $("mainNav").onclick = e => { const b = e.target.closest("button[data-s]"); if (b) showSection(b.dataset.s); };
@@ -378,6 +380,105 @@ async function orderPdf() {
       <div class="a-sign" style="margin-top:30px"><div><b>Sifariş verdi</b><p>${esc2(m.who || me || "____________________")}</p><p>İmza: __________</p></div><div><b>Qəbul etdi</b> (${esc2(S.t)})<p>Ad, soyad: ____________________</p><p>İmza: __________  Tarix: __________</p></div></div>` }];
   paginate(B, no); await Promise.all([...$("actSrc").querySelectorAll("img")].map(i => i.decode().catch(() => {})));
   showActView("Sifariş: " + S.t);
+}
+
+// =====================================================================================
+// 4) NÖVBƏ – a weekly night-shift rota: one person per night, a continuous round robin (fair over the weeks,
+//    nobody works two nights in a row); any night can be changed by hand.
+// =====================================================================================
+const N = makeStore("novbe", "tarqovu-novbe", () => { if (section === "novbe") renderRota(); });
+const WD = ["Bazar ertəsi", "Çərşənbə axşamı", "Çərşənbə", "Cümə axşamı", "Cümə", "Şənbə", "Bazar"];
+const WD_SHORT = ["B.e.", "Ç.a.", "Ç.", "C.a.", "C.", "Ş.", "B."];
+const DAY = 864e5, ANCHOR = new Date(2026, 0, 5, 12); // a Monday: the round robin counts from here
+const p2n = n => String(n).padStart(2, "0");
+const dmy = d => p2n(d.getDate()) + "." + p2n(d.getMonth() + 1) + "." + d.getFullYear();
+const dm = d => p2n(d.getDate()) + "." + p2n(d.getMonth() + 1);
+const isoDay = d => d.getFullYear() + "-" + p2n(d.getMonth() + 1) + "-" + p2n(d.getDate());
+function mondayOf(d) { const x = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
+let rotaMonday = mondayOf(new Date());
+const rotaCfg = () => Object.assign({ names: [], start: "23:00", end: "07:30" }, N.data._cfg || {});
+const rotaNames = () => rotaCfg().names.map(s => (s || "").trim()).filter(Boolean);
+function rotaWeek(monday) {
+  const names = rotaNames(), key = "w:" + isoDay(monday), over = (N.data[key] || {}).days || [];
+  const idx = Math.round((monday - ANCHOR) / (7 * DAY));
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(monday.getTime() + i * DAY), next = new Date(date.getTime() + DAY);
+    const auto = names.length ? names[(((idx * 7 + i) % names.length) + names.length) % names.length] : "";
+    return { i, date, next, auto, who: over[i] || auto, manual: !!over[i] && over[i] !== auto };
+  });
+}
+// redrawing replaces the fields; a focused field then blurs and fires its change again: draw once, then catch up
+let rotaDrawing = false;
+function renderRota() {
+  if (rotaDrawing) { setTimeout(renderRota, 0); return; }
+  rotaDrawing = true; try { drawRota(); } finally { rotaDrawing = false; }
+}
+function drawRota() {
+  const box = $("rotaView"), cfg = rotaCfg(), names = rotaNames(), wk = rotaWeek(rotaMonday), today = isoDay(new Date());
+  const count = {}; names.forEach(n => count[n] = 0); wk.forEach(d => { if (d.who) count[d.who] = (count[d.who] || 0) + 1; });
+  const sunday = new Date(rotaMonday.getTime() + 6 * DAY);
+  box.innerHTML = `<div class="wrap">
+    <div class="card rcfg"><h3>👥 İşçilər</h3>
+      <div class="rnames">${[...cfg.names, ...Array(Math.max(0, 4 - cfg.names.length)).fill("")].map((n, i) => `<input data-n="${i}" value="${esc2(n)}" placeholder="${i + 1}-ci işçinin adı" autocomplete="off">`).join("")}</div>
+      <div class="rtime"><label>Növbə başlayır <input type="time" id="rStart" value="${esc2(cfg.start)}"></label><label>bitir <input type="time" id="rEnd" value="${esc2(cfg.end)}"></label><button class="tool" id="rAdd" type="button">+ İşçi</button></div>
+      <p class="muted small">Adlar və saatlar hamı üçün ortaq saxlanılır. Bölgü fasiləsiz növbə ilə gedir: hər həftə əvvəlkinin davamıdır, ona görə uzun müddətdə hər kəs bərabər növbə alır və heç kim iki gecə ardıcıl işləmir.</p></div>
+    <div class="rweek"><button class="tool" id="rPrev" type="button">←</button><div><b>${dmy(rotaMonday)} – ${dmy(sunday)}</b><br><button class="notebtn" id="rNow" type="button">Bu həftə</button></div><button class="tool" id="rNext" type="button">→</button></div>
+    ${names.length ? `<div class="rtable">${wk.map(d => `<div class="rrow${isoDay(d.date) === today ? " now" : ""}"><div class="rday"><b>${WD[d.i]}</b><span>${dmy(d.date)} ${esc2(cfg.start)} → ${dm(d.next)} ${esc2(cfg.end)}</span></div>
+      <select data-d="${d.i}" aria-label="${WD[d.i]}">${names.map(n => `<option ${n === d.who ? "selected" : ""}>${esc2(n)}</option>`).join("")}${d.who && !names.includes(d.who) ? `<option selected>${esc2(d.who)}</option>` : ""}</select>${d.manual ? '<span class="rman" title="Əl ilə dəyişdirilib">✋</span>' : '<span class="rman"></span>'}</div>`).join("")}</div>
+      <p class="rcount">${Object.entries(count).map(([n, c]) => `<span><b>${esc2(n)}</b>: ${c} gecə</span>`).join("")}</p>
+      <div class="tools rtools"><button class="tool primary" id="rShare" type="button">📤 WhatsApp mətni</button><button class="tool primary" id="rPdf" type="button">📄 PDF / Çap</button><button class="tool" id="rPdf4" type="button">📄 4 həftə</button><button class="tool" id="rXls" type="button">Excel</button><button class="tool" id="rAuto" type="button">↺ Avtomatik bölgüyə qaytar</button></div>`
+    : '<p class="empty">Növbə cədvəli üçün yuxarıda işçilərin adlarını yazın.</p>'}
+  </div>`;
+  const saveCfg = p => { N.patch("_cfg", Object.assign(rotaCfg(), p)); };
+  box.querySelectorAll("[data-n]").forEach(inp => inp.onchange = () => { const list = [...box.querySelectorAll("[data-n]")].map(x => x.value.trim()); while (list.length > 1 && !list[list.length - 1]) list.pop(); saveCfg({ names: list }); renderRota(); });
+  $("rStart").onchange = e => { saveCfg({ start: e.target.value || "23:00" }); renderRota(); };
+  $("rEnd").onchange = e => { saveCfg({ end: e.target.value || "07:30" }); renderRota(); };
+  $("rAdd").onclick = () => { saveCfg({ names: [...[...box.querySelectorAll("[data-n]")].map(x => x.value.trim()), ""] }); renderRota(); setTimeout(() => { const ins = box.querySelectorAll("[data-n]"); ins[ins.length - 1].focus(); }, 50); };
+  $("rPrev").onclick = () => { rotaMonday = new Date(rotaMonday.getTime() - 7 * DAY); renderRota(); };
+  $("rNext").onclick = () => { rotaMonday = new Date(rotaMonday.getTime() + 7 * DAY); renderRota(); };
+  $("rNow").onclick = () => { rotaMonday = mondayOf(new Date()); renderRota(); };
+  if (!names.length) return;
+  box.querySelectorAll("select[data-d]").forEach(sel => sel.onchange = () => {
+    const key = "w:" + isoDay(rotaMonday), days = ((N.data[key] || {}).days || Array(7).fill(null)).slice(); while (days.length < 7) days.push(null);
+    const i = +sel.dataset.d; days[i] = sel.value === wk[i].auto ? null : sel.value;
+    N.set(key, days.some(Boolean) ? { days, by: me || null, at: Date.now() } : null); renderRota();
+  });
+  $("rAuto").onclick = () => { N.set("w:" + isoDay(rotaMonday), null); renderRota(); toast("Bu həftə avtomatik bölgüyə qaytarıldı"); };
+  $("rShare").onclick = rotaShare; $("rPdf").onclick = () => rotaPdf(1); $("rPdf4").onclick = () => rotaPdf(4); $("rXls").onclick = rotaExcel;
+}
+function rotaText(monday) {
+  const cfg = rotaCfg(), wk = rotaWeek(monday);
+  return `🗓️ Gecə növbəsi (${cfg.start}–${cfg.end})\n${dmy(monday)} – ${dmy(new Date(monday.getTime() + 6 * DAY))}\n\n` + wk.map(d => `${WD_SHORT[d.i]} ${dm(d.date)} → ${dm(d.next)}: ${d.who}`).join("\n") + "\n\nPopeyes, Tarqovu filialı";
+}
+async function rotaShare() {
+  const t = rotaText(rotaMonday);
+  if (navigator.share) { try { await navigator.share({ text: t }); return; } catch (e) { if (e.name === "AbortError") return; } }
+  try { await navigator.clipboard.writeText(t); toast("Mətn kopyalandı: WhatsApp-a yapışdırın"); }
+  catch (e) { const ta = document.createElement("textarea"); ta.value = t; document.body.append(ta); ta.select(); try { document.execCommand("copy"); toast("Mətn kopyalandı"); } catch (x) { toast("Kopyalamaq olmadı"); } ta.remove(); }
+}
+async function rotaPdf(weeks) {
+  const cfg = rotaCfg(), B = [];
+  const last = new Date(rotaMonday.getTime() + (weeks * 7 - 1) * DAY), no = "NV-" + isoDay(rotaMonday).replace(/-/g, "");
+  actPdfName = `Novbe_${isoDay(rotaMonday)}${weeks > 1 ? "_" + weeks + "hefte" : ""}.pdf`;
+  B.push({ html: `<div class="a-head"><div><div class="a-k">Popeyes · Tarqovu filialı</div><h1>Gecə növbəsi cədvəli</h1><div class="a-no">${dmy(rotaMonday)} – ${dmy(last)}</div></div><div class="a-date">Növbə<br>${esc2(cfg.start)} – ${esc2(cfg.end)}</div></div>` });
+  const all = {};
+  for (let w = 0; w < weeks; w++) {
+    const mon = new Date(rotaMonday.getTime() + w * 7 * DAY), wk = rotaWeek(mon);
+    wk.forEach(d => all[d.who] = (all[d.who] || 0) + 1);
+    B.push({ h2: weeks > 1 ? `${w + 1}-ci həftə: ${dmy(mon)} – ${dmy(new Date(mon.getTime() + 6 * DAY))}` : "Növbələr", cols: [24, 32, 30, 14], head: "<th>Gün</th><th>Növbə</th><th>İşçi</th><th>İmza</th>",
+      rows: wk.map(d => `<tr><td><b>${WD[d.i]}</b><br>${dmy(d.date)}</td><td>${dm(d.date)} ${esc2(cfg.start)} → ${dm(d.next)} ${esc2(cfg.end)}</td><td style="font-size:13px"><b>${esc2(d.who)}</b>${d.manual ? " ✋" : ""}</td><td></td></tr>`) });
+  }
+  B.push({ html: `<h2>Yekun</h2><table class="a-sum"><tr>${Object.keys(all).map(n => `<th>${esc2(n)}</th>`).join("")}</tr><tr>${Object.values(all).map(c => `<td>${c}</td>`).join("")}</tr></table><p class="a-note">Gecə sayı. ✋: əl ilə dəyişdirilmiş növbə.</p>
+    <div class="a-sign" style="margin-top:24px"><div><b>Tərtib etdi</b><p>${esc2(me || "____________________")}</p><p>İmza: __________</p></div><div><b>Təsdiq etdi</b> (restoran müdiri)<p>Ad, soyad: ____________________</p><p>İmza: __________</p></div></div>` });
+  paginate(B, no); showActView("Gecə növbəsi cədvəli");
+}
+function rotaExcel() {
+  if (!window.XLSX) return toast("Excel modulu yüklənmədi");
+  const cfg = rotaCfg(), rows = [];
+  for (let w = 0; w < 4; w++) { const mon = new Date(rotaMonday.getTime() + w * 7 * DAY); rotaWeek(mon).forEach(d => rows.push({ "Həftə": `${dmy(mon)} – ${dmy(new Date(mon.getTime() + 6 * DAY))}`, "Gün": WD[d.i], "Tarix": dmy(d.date), "Başlayır": `${dmy(d.date)} ${cfg.start}`, "Bitir": `${dmy(d.next)} ${cfg.end}`, "İşçi": d.who, "Qeyd": d.manual ? "əl ilə dəyişdirilib" : "" })); }
+  const ws = XLSX.utils.json_to_sheet(rows); ws["!cols"] = [24, 16, 12, 18, 18, 22, 20].map(w => ({ wch: w }));
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Növbə (4 həftə)");
+  deliverFile(new Blob([XLSX.write(wb, { bookType: "xlsx", type: "array" })], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), `Novbe_${isoDay(rotaMonday)}.xlsx`);
 }
 
 showSection(section);
