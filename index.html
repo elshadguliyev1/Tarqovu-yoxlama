@@ -160,6 +160,36 @@ body.av-open { overflow: hidden }
   .a-slot .a-page { transform: none !important }
 }
 .tools { display: contents }
+/* sections */
+.fdlg form { padding: 16px; display: grid; gap: 10px; min-width: min(88vw, 420px) } .fdt { font: 700 16px var(--f-display) }
+.fdlg label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted) } .fdlg input { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 9px; padding: 9px 10px; font: 15px var(--f-body) }
+.fdb { display: flex; gap: 8px; justify-content: flex-end }
+.mainnav { display: flex; gap: 6px; margin-top: 14px; overflow-x: auto; scrollbar-width: none }
+.mainnav::-webkit-scrollbar { display: none }
+.mainnav button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 99px; padding: 9px 14px; font: 600 14px var(--f-body); cursor: pointer; white-space: nowrap }
+.mainnav button[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg) }
+.view { display: none }
+body[data-view="tehvil"] .bar, body[data-view="tehvil"] #list, body[data-view="sifaris"] .bar, body[data-view="sifaris"] #list { display: none }
+body[data-view="tehvil"] #tehvilView, body[data-view="sifaris"] #orderView { display: block; padding-bottom: 60px }
+.sbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); box-shadow: var(--shadow); margin-bottom: 14px }
+.sbar .wrap { padding-block: 12px; display: grid; gap: 10px }
+.sbar .wrap > *, .sbar .filters { min-width: 0 }
+.sbar .tools { display: flex; gap: 8px; flex-wrap: wrap }
+.cnt2 { display: flex; align-items: center; gap: 8px; font: 14px var(--f-mono) } .cnt2 b { font-size: 17px } .cnt2 .tool { min-width: 40px; font-weight: 700 } .cnt2 .tool:disabled { opacity: .4 }
+.tstat { font-size: 12.5px; font-weight: 600 }
+.ocart { display: flex; flex-wrap: wrap; gap: 8px 14px; justify-content: space-between; align-items: center; font-size: 14px }
+.ogrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px }
+.ocard { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; align-content: start }
+.ocard.in { border-color: var(--accent); background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface)) }
+.oimg { width: 96px; height: 84px; background: #fff; border: 1px solid var(--line); border-radius: 8px; display: grid; place-items: center; overflow: hidden; cursor: zoom-in }
+.oimg img { max-width: 100%; max-height: 100%; object-fit: contain } .oimg span { font-size: 11px; color: var(--muted) }
+.ot { font-weight: 600; font-size: 14px; line-height: 1.3 } .osub { color: var(--muted); font-size: 12px }
+.ometa { display: flex; justify-content: space-between; gap: 8px; font: 12.5px var(--f-mono); color: var(--muted); margin: 4px 0 6px } .ometa b { color: var(--fg) }
+.oline { display: grid; grid-template-columns: minmax(0, 1fr) 72px 36px; gap: 6px; margin-bottom: 6px }
+.oline input, .onote { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 8px; padding: 7px 8px; font: 14px var(--f-body); min-width: 0; width: 100% }
+.onote { font-size: 13px; margin-bottom: 6px }
+.oacts { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center } .oq { font-size: 12.5px; color: var(--muted) } .oq b { color: var(--fg) }
+@media (max-width: 680px) { .ogrid { grid-template-columns: 1fr } }
 @media (max-width: 680px) {
   .bar .wrap > *, .filters { min-width: 0 }
   .tools { display: flex; gap: 8px; overflow-x: auto; flex: 1 1 100%; min-width: 0; width: calc(100% + 32px); margin: 0 -16px; padding: 0 16px 2px; scrollbar-width: none }
@@ -212,8 +242,9 @@ body.av-open { overflow: hidden }
 
 <header class="top wrap">
   <div class="eyebrow">Popeyes · Tarqovu filialı · Nizami küç. 62A</div>
-  <h1>Tarqovu avadanlıq yoxlaması</h1>
-  <p class="sub">Franke layihəsi 693107. <b>Sifariş 9152632</b> (14.07.2026, gəliş 12.10.2026) və <b>Təklif 9150395</b> (26.05.2026). Hər sətri yoxlayıb statusunu qeyd edin.</p>
+  <h1 id="pageTitle">Tarqovu avadanlıq yoxlaması</h1>
+  <p class="sub" id="pageSub">Franke layihəsi 693107. <b>Sifariş 9152632</b> (14.07.2026, gəliş 12.10.2026) və <b>Təklif 9150395</b> (26.05.2026). Hər sətri yoxlayıb statusunu qeyd edin.</p>
+  <nav class="mainnav" id="mainNav" aria-label="Bölmələr"><button type="button" data-s="qebul" aria-pressed="true">📦 Franke qəbul</button><button type="button" data-s="tehvil" aria-pressed="false">🏪 Restoran təhvili</button><button type="button" data-s="sifaris" aria-pressed="false">🧾 Sifariş</button></nav>
   <div id="storeNote" class="note-banner" hidden></div>
 </header>
 
@@ -247,6 +278,8 @@ body.av-open { overflow: hidden }
 </div></div>
 
 <main class="wrap" id="list"></main>
+<section id="tehvilView" class="view"></section>
+<section id="orderView" class="view"></section>
 
 <dialog id="dlg"><div class="big"><img id="dlgImg" alt=""></div><div class="cap"><div><p id="dlgAz" style="font-weight:600"></p><p id="dlgEn" style="color:var(--muted);font-size:13px"></p></div><div style="display:flex;gap:6px"><button class="tool" id="dlgDel" type="button" hidden>Sil</button><button class="tool" id="dlgClose" type="button">Bağla</button></div></div></dialog>
 <dialog id="scanDlg" aria-label="Barkod skaneri">
@@ -469,6 +502,7 @@ async function boot() {
     remote = { save: (k, v) => fs.setDoc(ref, {items: {[k]: v === null ? fs.deleteField() : v}, updatedAt: fs.serverTimestamp()}, {merge: true}),
       savePhoto: (id, v) => fs.setDoc(phRef(id), v), getPhoto: id => fs.getDoc(phRef(id)).then(s => s.exists() ? s.data() : null), delPhoto: id => fs.deleteDoc(phRef(id)) };
     uploadPending();
+    window.FS = {fs, db}; dispatchEvent(new Event("fs-ready")); // the other sections (sections.js) open their own documents
     [...unsent].forEach(send);   // anything marked while the DB was unreachable
     fs.onSnapshot(ref, {includeMetadataChanges: true}, snap => {
       serverPending = snap.metadata.hasPendingWrites;
@@ -660,6 +694,7 @@ function onCode(raw, fromCam) {
   const now = Date.now();
   if (fromCam) { const same = code === scan.last && now - scan.seenAt < 1200; scan.seenAt = now; if (same) return; }
   scan.last = code; $("scanIn").value = code;
+  if (window.scanHook && window.scanHook(code)) return; // another section (restaurant handover) counts with the scanner
   const hits = findByCode(code);
   if (!hits.length) { scanBeep("bad"); scanShow(code); return; }
   if (!scanPrefs.count) { scanBeep("ok"); scanShow(code); return; }
@@ -951,5 +986,6 @@ $("avPdf").onclick = async () => {
 fillSec();
 boot();
 </script>
+<script src="sections.js"></script>
 
 </body></html>
