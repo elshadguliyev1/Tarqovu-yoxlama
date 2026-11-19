@@ -1,7 +1,7 @@
 // Offline support. The page and the app code are fetched network-first, bypassing the browser's HTTP cache
 // (GitHub Pages lets it keep a page for 10 minutes), so a new version arrives at once; libraries and the catalogue
 // are cache-first. A new cache name per release replaces everything.
-const CACHE = "tarqovu-v12";
+const CACHE = "tarqovu-v13";
 const SDK = /^https:\/\/www\.gstatic\.com\/firebasejs\/10\.14\.1\//;
 const LIBS = /^((zxing|jspdf|html2canvas|exceljs)\.min\.js|catalog\.js)$/;
 const PRE = ["./", "sections.js", "zxing.min.js", "jspdf.min.js", "html2canvas.min.js", "catalog.js", "exceljs.min.js"];

@@ -990,12 +990,26 @@ async function buildPdf() {
     box.step("Modul yüklənir…");
     await loadScript("html2canvas.min.js"); await loadScript("jspdf.min.js");
     if (!window.html2canvas || !window.jspdf) throw new Error("PDF modulu yüklənmədi (internet?)");
-    const pages = [...$("actSrc").children], pdf = new window.jspdf.jsPDF({unit: "mm", format: "a4", compress: true});
-    for (let i = 0; i < pages.length; i++) {
-      box.step("Səhifə " + (i + 1) + " / " + pages.length);
-      const cv = await html2canvas(pages[i], {scale: 1.6, backgroundColor: "#ffffff", logging: false, useCORS: true});
-      if (i) pdf.addPage(); pdf.addImage(cv.toDataURL("image/jpeg", .82), "JPEG", 0, 0, 210, 297);
-    }
+    // html2canvas copies the whole document of the element it draws. The page itself holds hundreds of pictures and a
+    // megabyte of code, which makes phones hang, so every A4 page is drawn inside a tiny empty frame with only the styles.
+    const fr = document.createElement("iframe"); fr.setAttribute("aria-hidden", "true"); fr.style.cssText = "position:fixed;left:-10000px;top:0;width:820px;height:1160px;border:0";
+    document.body.append(fr);
+    const css = [...document.querySelectorAll("style")].map(s => s.textContent).join("\n"), links = [...document.querySelectorAll('link[rel="stylesheet"]')].map(l => l.outerHTML).join("");
+    const doc = fr.contentDocument; doc.open(); doc.write(`<!doctype html><html><head><meta charset="utf-8">${links}<style>${css}</style></head><body style="margin:0;background:#fff;color-scheme:light"></body></html>`); doc.close();
+    const limit = (pr, ms, what) => Promise.race([pr, new Promise((_, no) => setTimeout(() => no(new Error(what)), ms))]);
+    await limit(new Promise(r => fr.contentWindow.setTimeout(r, 50)), 3000, "çərçivə açılmadı");
+    try { await limit(doc.fonts.ready, 4000, "şrift"); } catch (e) {}
+    const pages = [...$("actSrc").children], pdf = new window.jspdf.jsPDF({unit: "mm", format: "a4", compress: true}), scale = isMobile ? 1.35 : 1.6;
+    try {
+      for (let i = 0; i < pages.length; i++) {
+        box.step("Səhifə " + (i + 1) + " / " + pages.length);
+        doc.body.innerHTML = pages[i].outerHTML; const pg = doc.body.firstElementChild;
+        await Promise.all([...pg.querySelectorAll("img")].map(im => im.decode().catch(() => {})));
+        const cv = await limit(html2canvas(pg, {scale, backgroundColor: "#ffffff", logging: false, useCORS: true, windowWidth: 820, windowHeight: 1160}), 45000, "səhifə " + (i + 1) + " çəkilmədi (vaxt bitdi)");
+        if (i) pdf.addPage(); pdf.addImage(cv.toDataURL("image/jpeg", .8), "JPEG", 0, 0, 210, 297);
+        cv.width = cv.height = 0; // free the memory at once (phones)
+      }
+    } finally { fr.remove(); }
     const blob = pdf.output("blob"); box.done(); return blob;
   } catch (e) { box.fail("PDF hazırlamaq olmadı: " + (e && (e.message || e.name) || e) + ". Bu mesajın şəklini göndərin."); return null; }
 }
